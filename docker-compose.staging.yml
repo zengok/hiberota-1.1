@@ -1,0 +1,11 @@
+services:
+  web:
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -fsS -H 'Host: staging.hiberota.com' -H 'X-Forwarded-Proto: https' http://localhost:8000/health/live || exit 1",
+        ]
+  nginx:
+    ports:
+      - "127.0.0.1:8081:80"

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <section class="page-intro" style="padding:34px 40px 24px;border-bottom:1px solid #EEF3F0">
+    <div style="max-width:1200px;margin:0 auto;display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap">
+      <div>
+        <h1 style="margin:0 0 8px;font-size:30px;font-weight:800;letter-spacing:-.02em;color:#14211B">Kurumlar</h1>
+        <p style="margin:0;font-size:15.5px;color:#586B61;max-width:560px">Doğrulanmış kurumları, aktif çağrı sayılarını ve son güncellemeleri inceleyin.</p>
+      </div>
+      <span style="font-size:13.5px;font-weight:600;color:#586B61">{{ result_count }} kurum</span>
+    </div>
+  </section>
+
+  <section style="padding:26px 40px 56px;max-width:1200px;margin:0 auto">
+    <form action="{% url 'institution-list' %}" method="get" role="search" style="display:flex;gap:10px;margin-bottom:24px;max-width:560px">
+      <div style="flex:1;display:flex;align-items:center;gap:11px;background:#fff;border:1px solid #CBE6D8;border-radius:13px;padding:0 15px;box-shadow:0 4px 14px rgba(16,61,43,.05)">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#8AA197" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <label class="visually-hidden" for="institution-search">Kurum ara</label>
+        <input id="institution-search" name="q" type="search" value="{{ query }}" placeholder="Kurum veya ülke ara" style="flex:1;border:0;outline:0;padding:13px 0;font-size:15px;color:#1e2a24;background:transparent">
+      </div>
+      <button class="btn btn-primary" type="submit" style="border-radius:13px;padding:0 26px;font-weight:600;font-size:15px">Ara</button>
+      {% if query %}
+        <a class="btn btn-outline-secondary" href="{% url 'institution-list' %}" style="border-radius:13px;padding:0 16px;font-size:14px;text-decoration:none;display:flex;align-items:center">Temizle</a>
+      {% endif %}
+    </form>
+
+    <div class="institution-grid">
+      {% for institution in institutions_page %}
+        {% include "includes/institution_card.html" %}
+      {% empty %}
+        <div class="empty-state">
+          <h2 class="h5">Kurum bulunamadı</h2>
+          <p style="color:#586B61">Arama terimini değiştirerek yeniden deneyin.</p>
+        </div>
+      {% endfor %}
+    </div>
+
+    {% if institutions_page.paginator.num_pages > 1 %}
+      <nav style="display:flex;align-items:center;justify-content:center;gap:16px;margin-top:30px" aria-label="Kurum sayfaları">
+        {% if previous_page_url %}
+          <a href="{{ previous_page_url }}" style="border:1px solid #D7E6DD;background:#fff;color:#14211B;border-radius:10px;padding:9px 16px;font-weight:600;font-size:13.5px;text-decoration:none">Önceki</a>
+        {% endif %}
+        <span style="font-size:13px;color:#586B61">Sayfa {{ institutions_page.number }} / {{ institutions_page.paginator.num_pages }}</span>
+        {% if next_page_url %}
+          <a href="{{ next_page_url }}" style="border:1px solid #15875C;background:#15875C;color:#fff;border-radius:10px;padding:9px 16px;font-weight:600;font-size:13.5px;text-decoration:none">Sonraki</a>
+        {% endif %}
+      </nav>
+    {% endif %}
+  </section>
+{% endblock %}

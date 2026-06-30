@@ -1,0 +1,12 @@
+{% if adsense_ready and slot_id %}
+  <aside class="ad-slot" aria-label="Reklam">
+    <ins
+      class="adsbygoogle"
+      style="display:block"
+      data-ad-client="{{ adsense_client_id }}"
+      data-ad-slot="{{ slot_id }}"
+      data-ad-format="auto"
+      data-full-width-responsive="true"
+    ></ins>
+  </aside>
+{% endif %}

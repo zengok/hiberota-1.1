@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <section class="page-intro">
+    <div class="container py-5">
+      <p class="text-secondary fw-semibold mb-2">{{ status_code }}</p>
+      <h1 class="h2 fw-semibold">{{ error_title }}</h1>
+      <p class="text-secondary mb-0">{{ error_message }}</p>
+    </div>
+  </section>
+
+  <section class="container py-4">
+    <div class="error-actions">
+      <a class="btn btn-primary" href="{% url 'home' %}">Ana sayfaya dön</a>
+      <a class="btn btn-outline-secondary" href="{% url 'call-list' %}">Çağrıları incele</a>
+    </div>
+  </section>
+{% endblock %}

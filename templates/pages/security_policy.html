@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <section class="page-intro">
+    <div class="container py-4">
+      <h1 class="h2 fw-semibold">Güvenlik bildirimi</h1>
+      <p class="text-secondary mb-0">
+        HibeRota güvenlik bildirimlerini iyi niyetli, sorumlu ve gizliliğe saygılı şekilde ele alır.
+      </p>
+    </div>
+  </section>
+
+  <section class="container py-4">
+    <div class="legal-content">
+      <h2 class="h5">Kapsam</h2>
+      <p>
+        HibeRota public web sayfaları, yönetici erişim yüzeyi ve veri işleme akışları için güvenlik bildirimleri
+        kabul edilir. Bildirimler yalnızca kendi test hesabınız veya herkese açık içerikler üzerinde, hizmeti
+        kesintiye uğratmadan hazırlanmalıdır.
+      </p>
+
+      <h2 class="h5">Bildirim yöntemi</h2>
+      <p>
+        Bulgularınızı <a href="{{ security_contact }}">{{ security_contact }}</a> adresi üzerinden iletebilirsiniz.
+        Bildirime etki özeti, yeniden üretim adımları, ilgili URL ve varsa ekran görüntüsü ekleyin.
+      </p>
+
+      <h2 class="h5">İyi niyetli araştırma kuralları</h2>
+      <ul>
+        <li>Veri silme, değiştirme veya dışarı aktarma denemesi yapmayın.</li>
+        <li>DDoS, yük testi, sosyal mühendislik, fiziksel saldırı ve kalıcılık denemeleri yapmayın.</li>
+        <li>Başka kişilere ait kişisel verileri görüntülemeye veya paylaşmaya çalışmayın.</li>
+        <li>Bulgunun etkisini göstermek için en az veri ve en düşük riskli yöntemle ilerleyin.</li>
+      </ul>
+
+      <h2 class="h5">Yanıt süreci</h2>
+      <p>
+        Bildirimler önceliklendirilir, doğrulanır ve etkiye göre ele alınır. Kritik bulgularda geçici koruma,
+        düzeltme ve doğrulama adımları tamamlanmadan public teknik detay paylaşılmaz.
+      </p>
+
+      <h2 class="h5">Gizlilik ve yasal çerçeve</h2>
+      <p>
+        HibeRota iyi niyetli bildirimleri gizli tutar. Bu sayfa izinli güvenlik testi taahhüdü değildir; yasalar,
+        hizmet şartları ve üçüncü taraf sistem kuralları geçerlidir.
+      </p>
+    </div>
+  </section>
+{% endblock %}

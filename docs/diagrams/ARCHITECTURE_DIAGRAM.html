@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HibeRota Mimari Diyagramı</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+        }
+        h1 {
+            text-align: center;
+            color: #1a3a52;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+
+        /* Architecture Diagrams */
+        .diagram-section {
+            margin: 40px 0;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 5px solid #2c5aa0;
+        }
+
+        .diagram-title {
+            font-size: 1.4em;
+            color: #1a3a52;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        svg {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 20px auto;
+        }
+
+        /* Components */
+        .component {
+            background: white;
+            border: 2px solid #2c5aa0;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .component-icon {
+            font-size: 2em;
+            width: 50px;
+            text-align: center;
+        }
+
+        .component-content h3 {
+            color: #1a3a52;
+            margin-bottom: 5px;
+        }
+
+        .component-content p {
+            color: #666;
+            font-size: 0.95em;
+            margin: 0;
+        }
+
+        /* Pipeline */
+        .pipeline {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+        }
+
+        .pipeline-step {
+            flex: 1;
+            min-width: 120px;
+            text-align: center;
+            padding: 15px;
+            background: #e3f2fd;
+            border-radius: 6px;
+            border-left: 4px solid #2c5aa0;
+            font-size: 0.9em;
+            color: #1a3a52;
+            font-weight: 500;
+        }
+
+        .pipeline-arrow {
+            font-size: 1.5em;
+            color: #2c5aa0;
+        }
+
+        /* Data Model */
+        .entity-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .entity {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .entity h4 {
+            margin-bottom: 10px;
+            font-size: 1.1em;
+            border-bottom: 2px solid rgba(255,255,255,0.3);
+            padding-bottom: 8px;
+        }
+
+        .entity ul {
+            list-style: none;
+            font-size: 0.85em;
+            line-height: 1.6;
+        }
+
+        .entity li:before {
+            content: "• ";
+            margin-right: 5px;
+        }
+
+        /* Phase Timeline */
+        .timeline {
+            position: relative;
+            padding: 20px 0;
+        }
+
+        .timeline-item {
+            display: flex;
+            margin-bottom: 30px;
+            align-items: flex-start;
+        }
+
+        .timeline-marker {
+            width: 40px;
+            height: 40px;
+            background: #2c5aa0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            flex-shrink: 0;
+            margin-right: 20px;
+            box-shadow: 0 2px 8px rgba(44, 90, 160, 0.3);
+        }
+
+        .timeline-marker.completed {
+            background: #4caf50;
+        }
+
+        .timeline-marker.current {
+            background: #ff9800;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3); }
+            50% { box-shadow: 0 2px 20px rgba(255, 152, 0, 0.6); }
+        }
+
+        .timeline-content {
+            flex: 1;
+        }
+
+        .timeline-content h4 {
+            color: #1a3a52;
+            margin-bottom: 5px;
+        }
+
+        .timeline-content p {
+            color: #666;
+            margin: 0;
+            font-size: 0.95em;
+        }
+
+        .timeline-content .status {
+            display: inline-block;
+            margin-top: 8px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+
+        .status.completed {
+            background: #c8e6c9;
+            color: #2e7d32;
+        }
+
+        .status.current {
+            background: #ffe0b2;
+            color: #e65100;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+        }
+
+        th {
+            background: #2c5aa0;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        tr:hover {
+            background: #f5f5f5;
+        }
+
+        .metric-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+
+        .metric-success {
+            background: #c8e6c9;
+            color: #2e7d32;
+        }
+
+        .metric-warning {
+            background: #ffe0b2;
+            color: #e65100;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            color: #999;
+            font-size: 0.9em;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            h1 {
+                font-size: 1.8em;
+            }
+            .pipeline {
+                flex-direction: column;
+            }
+            .pipeline-arrow {
+                transform: rotate(90deg);
+                margin: 10px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏗️ HibeRota Mimari Sistemi</h1>
+        <p class="subtitle">Hibe ve Fonlar Keşif Platformu - Teknik Mimarisi</p>
+
+        <!-- System Architecture -->
+        <div class="diagram-section">
+            <div class="diagram-title">1. Sistem Mimarisi Genel Görünüm</div>
+            <svg viewBox="0 0 1000 400" xmlns="http://www.w3.org/2000/svg" style="border: 1px solid #e0e0e0; border-radius: 6px;">
+                <!-- Client -->
+                <rect x="50" y="30" width="120" height="60" fill="#e3f2fd" stroke="#2c5aa0" stroke-width="2" rx="4"/>
+                <text x="110" y="65" text-anchor="middle" font-weight="bold" font-size="12">Browser</text>
+
+                <!-- Arrow -->
+                <path d="M 170 60 L 210 60" stroke="#2c5aa0" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+
+                <!-- Cloudflare -->
+                <rect x="210" y="30" width="120" height="60" fill="#fff3e0" stroke="#ff9800" stroke-width="2" rx="4"/>
+                <text x="270" y="65" text-anchor="middle" font-weight="bold" font-size="12">Cloudflare</text>
+                <text x="270" y="80" text-anchor="middle" font-size="10" fill="#666">WAF, DDoS</text>
+
+                <!-- Arrow -->
+                <path d="M 330 60 L 370 60" stroke="#2c5aa0" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+
+                <!-- Nginx -->
+                <rect x="370" y="30" width="120" height="60" fill="#c8e6c9" stroke="#4caf50" stroke-width="2" rx="4"/>
+                <text x="430" y="65" text-anchor="middle" font-weight="bold" font-size="12">Nginx</text>
+                <text x="430" y="80" text-anchor="middle" font-size="10" fill="#666">Reverse Proxy</text>
+
+                <!-- Arrow -->
+                <path d="M 490 60 L 530 60" stroke="#2c5aa0" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+
+                <!-- Django -->
+                <rect x="530" y="30" width="120" height="60" fill="#f3e5f5" stroke="#764ba2" stroke-width="2" rx="4"/>
+                <text x="590" y="65" text-anchor="middle" font-weight="bold" font-size="12">Django</text>
+                <text x="590" y="80" text-anchor="middle" font-size="10" fill="#666">App Server</text>
+
+                <!-- Arrow to DB -->
+                <path d="M 590 90 L 590 140" stroke="#2c5aa0" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+
+                <!-- PostgreSQL -->
+                <rect x="530" y="140" width="120" height="60" fill="#bbdefb" stroke="#1976d2" stroke-width="2" rx="4"/>
+                <text x="590" y="175" text-anchor="middle" font-weight="bold" font-size="12">PostgreSQL</text>
+                <text x="590" y="190" text-anchor="middle" font-size="10" fill="#666">Database</text>
+
+                <!-- Redis -->
+                <rect x="680" y="140" width="120" height="60" fill="#ffccbc" stroke="#d84315" stroke-width="2" rx="4"/>
+                <text x="740" y="175" text-anchor="middle" font-weight="bold" font-size="12">Redis</text>
+                <text x="740" y="190" text-anchor="middle" font-size="10" fill="#666">Cache/Broker</text>
+
+                <!-- Arrow from Django to Redis -->
+                <path d="M 630 65 L 680 65" stroke="#d84315" stroke-width="2" fill="none" marker-end="url(#arrowhead-red)"/>
+
+                <!-- Celery Workers -->
+                <rect x="680" y="260" width="120" height="60" fill="#dcedc8" stroke="#558b2f" stroke-width="2" rx="4"/>
+                <text x="740" y="295" text-anchor="middle" font-weight="bold" font-size="12">Celery</text>
+                <text x="740" y="310" text-anchor="middle" font-size="10" fill="#666">Workers</text>
+
+                <!-- Arrow from Redis to Celery -->
+                <path d="M 740 200 L 740 260" stroke="#558b2f" stroke-width="2" fill="none" marker-end="url(#arrowhead-green)"/>
+
+                <!-- Arrow from Celery to DB -->
+                <path d="M 680 290 L 630 170" stroke="#558b2f" stroke-width="2" fill="none" marker-end="url(#arrowhead-green)"/>
+
+                <!-- Arrow definitions -->
+                <defs>
+                    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                        <polygon points="0 0, 10 3, 0 6" fill="#2c5aa0" />
+                    </marker>
+                    <marker id="arrowhead-red" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                        <polygon points="0 0, 10 3, 0 6" fill="#d84315" />
+                    </marker>
+                    <marker id="arrowhead-green" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                        <polygon points="0 0, 10 3, 0 6" fill="#558b2f" />
+                    </marker>
+                </defs>
+            </svg>
+        </div>
+
+        <!-- Runtime Components -->
+        <div class="diagram-section">
+            <div class="diagram-title">2. Runtime Bileşenleri</div>
+
+            <div class="component">
+                <div class="component-icon">🌐</div>
+                <div class="component-content">
+                    <h3>Web Server (Django)</h3>
+                    <p>Python 3.12 + Django 5.2 LTS. Server-side rendering, template-based, minimal JavaScript.</p>
+                </div>
+            </div>
+
+            <div class="component">
+                <div class="component-icon">🗄️</div>
+                <div class="component-content">
+                    <h3>PostgreSQL Database</h3>
+                    <p>Tüm veriler burada: çağrılar, kurumlar, kaynaklar, logs. FTS ve trigram indexler.</p>
+                </div>
+            </div>
+
+            <div class="component">
+                <div class="component-icon">⚡</div>
+                <div class="component-content">
+                    <h3>Redis Cache & Broker</h3>
+                    <p>Celery broker, kısa süreli cache (2-15 min), distributed locks, rate limits.</p>
+                </div>
+            </div>
+
+            <div class="component">
+                <div class="component-icon">🔄</div>
+                <div class="component-content">
+                    <h3>Celery Workers</h3>
+                    <p>7 kuyruk: crawl_discovery, crawl_detail, link_check, publication, newsletter, maintenance, headless.</p>
+                </div>
+            </div>
+
+            <div class="component">
+                <div class="component-icon">⏰</div>
+                <div class="component-content">
+                    <h3>Celery Beat (Scheduler)</h3>
+                    <p>Periyodik görevler: saatlik kaynakları tarama, haftalık/aylık newsletter digest.</p>
+                </div>
+            </div>
+
+            <div class="component">
+                <div class="component-icon">🔒</div>
+                <div class="component-content">
+                    <h3>Nginx Reverse Proxy</h3>
+                    <p>TLS termination, static/media serving, request limits, security headers, rate limiting.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pipeline -->
+        <div class="diagram-section">
+            <div class="diagram-title">3. Veri Tarama & İşleme Pipeline</div>
+
+            <div class="pipeline">
+                <div class="pipeline-step">📅 Schedule</div>
+                <div class="pipeline-arrow">→</div>
+                <div class="pipeline-step">🔒 Source<br/>Lock</div>
+                <div class="pipeline-arrow">→</div>
+                <div class="pipeline-step">🔍 Discover</div>
+                <div class="pipeline-arrow">→</div>
+                <div class="pipeline-step">🔗 Fetch</div>
+                <div class="pipeline-arrow">→</div>
+                <div class="pipeline-step">📄 Parse</div>
+            </div>
+
+            <div class="pipeline">
+                <div class="pipeline-step">✅ Validate</div>
+                <div class="pipeline-arrow">→</div>
+                <div class="pipeline-step">📊 Deduplicate</div>
+                <div class="pipeline-arrow">→</div>
+                <div class="pipeline-step">💯 Confidence</div>
+                <div class="pipeline-arrow">→</div>
+                <div class="pipeline-step">📤 Publish/<br/>Review</div>
+                <div class="pipeline-arrow">→</div>
+                <div class="pipeline-step">📝 Evidence</div>
+            </div>
+
+            <p style="margin-top: 20px; color: #666; font-size: 0.9em;">
+                <strong>Confidence Scoring:</strong> Toplam 100 puan (başlık 15, URL 10, kurum 10, hedef kitle 10,
+                deadline 20, amaç 10, finansman 10, ülke 5, koşullar 5, geçmiş 5).
+                Karar: 85+ → Auto Publish, 60-84 → Review, 0-59 → Draft
+            </p>
+        </div>
+
+        <!-- Data Model -->
+        <div class="diagram-section">
+            <div class="diagram-title">4. Veri Modeli - Ana Varlıklar</div>
+
+            <div class="entity-grid">
+                <div class="entity">
+                    <h4>GrantCall</h4>
+                    <ul>
+                        <li>title, slug</li>
+                        <li>external_id</li>
+                        <li>official_url</li>
+                        <li>deadline_at</li>
+                        <li>confidence_score</li>
+                        <li>workflow_status</li>
+                    </ul>
+                </div>
+
+                <div class="entity">
+                    <h4>Institution</h4>
+                    <ul>
+                        <li>name, slug</li>
+                        <li>institution_type</li>
+                        <li>country</li>
+                        <li>website_url</li>
+                        <li>is_verified</li>
+                    </ul>
+                </div>
+
+                <div class="entity">
+                    <h4>Source</h4>
+                    <ul>
+                        <li>name, base_url</li>
+                        <li>source_type</li>
+                        <li>adapter_key</li>
+                        <li>robots_status</li>
+                        <li>health_score</li>
+                    </ul>
+                </div>
+
+                <div class="entity">
+                    <h4>CrawlRun</h4>
+                    <ul>
+                        <li>source, trigger_type</li>
+                        <li>discovered_count</li>
+                        <li>created_count</li>
+                        <li>failed_count</li>
+                        <li>error_code</li>
+                    </ul>
+                </div>
+
+                <div class="entity">
+                    <h4>Taxonomy</h4>
+                    <ul>
+                        <li>AudienceType</li>
+                        <li>Sector</li>
+                        <li>Theme</li>
+                        <li>ProgramType</li>
+                        <li>Region</li>
+                    </ul>
+                </div>
+
+                <div class="entity">
+                    <h4>FieldEvidence</h4>
+                    <ul>
+                        <li>grant_call, field_name</li>
+                        <li>source_url</li>
+                        <li>source_excerpt</li>
+                        <li>parser_version</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Django Apps -->
+        <div class="diagram-section">
+            <div class="diagram-title">5. Django Modülü Mimarisi</div>
+
+            <table>
+                <tr>
+                    <th>Modül</th>
+                    <th>Sorumluluk</th>
+                    <th>Önemli Modeller</th>
+                </tr>
+                <tr>
+                    <td><strong>core</strong></td>
+                    <td>Temel ayarlar, health checks</td>
+                    <td>Health endpoints, settings</td>
+                </tr>
+                <tr>
+                    <td><strong>calls</strong></td>
+                    <td>Hibe çağrıları yönetimi</td>
+                    <td>GrantCall, durum hesaplama</td>
+                </tr>
+                <tr>
+                    <td><strong>sources</strong></td>
+                    <td>Kaynak yönetimi</td>
+                    <td>Source, adapter registry</td>
+                </tr>
+                <tr>
+                    <td><strong>ingestion</strong></td>
+                    <td>Veri tarama pipeline</td>
+                    <td>CrawlRun, CrawlItem</td>
+                </tr>
+                <tr>
+                    <td><strong>taxonomy</strong></td>
+                    <td>Sınıflandırma</td>
+                    <td>Audience, Sector, Theme</td>
+                </tr>
+                <tr>
+                    <td><strong>institutions</strong></td>
+                    <td>Kurum yönetimi</td>
+                    <td>Institution, Country</td>
+                </tr>
+                <tr>
+                    <td><strong>newsletter</strong></td>
+                    <td>E-bülten görevleri</td>
+                    <td>Subscriber, Email templates</td>
+                </tr>
+                <tr>
+                    <td><strong>blog</strong></td>
+                    <td>Blog ve editöryel</td>
+                    <td>BlogPost, Author</td>
+                </tr>
+                <tr>
+                    <td><strong>analytics</strong></td>
+                    <td>SEO, GA4, AdSense</td>
+                    <td>Sitemap, RSS feed</td>
+                </tr>
+                <tr>
+                    <td><strong>security</strong></td>
+                    <td>2FA, audit logs</td>
+                    <td>Audit log, TOTP</td>
+                </tr>
+                <tr>
+                    <td><strong>survey</strong></td>
+                    <td>Hibe anketi</td>
+                    <td>Survey, matcher</td>
+                </tr>
+                <tr>
+                    <td><strong>contact</strong></td>
+                    <td>İletişim formu</td>
+                    <td>ContactMessage</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Development Timeline -->
+        <div class="diagram-section">
+            <div class="diagram-title">6. Geliştirme Aşamaları (Faz Timeline)</div>
+
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-marker completed">✓</div>
+                    <div class="timeline-content">
+                        <h4>Faz 0-7</h4>
+                        <p>Hazırlık, temel iskelet, domain modeli, otomasyon, public sayfalar, SEO, güvenlik</p>
+                        <span class="status completed">Tamamlandı (25 Haziran)</span>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-marker completed">✓</div>
+                    <div class="timeline-content">
+                        <h4>Faz 8-10</h4>
+                        <p>Staging & Production, real data writing, quality certification, source scaling</p>
+                        <span class="status completed">Tamamlandı (29 Haziran)</span>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-marker current">◐</div>
+                    <div class="timeline-content">
+                        <h4>Faz 11 (DEVAM EDİYOR)</h4>
+                        <p>Production scheduler allowlist ile açılmıştır. Kontrollü kaynak ölçekleme devam etmektedir.</p>
+                        <span class="status current">Aktif (30 Haziran 2026)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Security & Operations -->
+        <div class="diagram-section">
+            <div class="diagram-title">7. Güvenlik & Operasyon</div>
+
+            <table>
+                <tr>
+                    <th>Kategori</th>
+                    <th>Kontroller</th>
+                </tr>
+                <tr>
+                    <td><strong>Application</strong></td>
+                    <td>
+                        <span class="metric-badge metric-success">✓ CSP</span>
+                        <span class="metric-badge metric-success">✓ HSTS</span>
+                        <span class="metric-badge metric-success">✓ CSRF</span>
+                        <span class="metric-badge metric-success">✓ 2FA</span>
+                        <span class="metric-badge metric-success">✓ Brute-force</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Network</strong></td>
+                    <td>
+                        <span class="metric-badge metric-success">✓ Cloudflare WAF</span>
+                        <span class="metric-badge metric-success">✓ Rate Limit</span>
+                        <span class="metric-badge metric-success">✓ Origin Lock</span>
+                        <span class="metric-badge metric-success">✓ Nginx</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Server</strong></td>
+                    <td>
+                        <span class="metric-badge metric-success">✓ SSH Key</span>
+                        <span class="metric-badge metric-success">✓ No Root</span>
+                        <span class="metric-badge metric-success">✓ Firewall</span>
+                        <span class="metric-badge metric-success">✓ Fail2Ban</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Data</strong></td>
+                    <td>
+                        <span class="metric-badge metric-success">✓ Encrypted Backup</span>
+                        <span class="metric-badge metric-success">✓ Log Rotation</span>
+                        <span class="metric-badge metric-success">✓ Audit Log</span>
+                        <span class="metric-badge metric-success">✓ Privacy</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Compliance</strong></td>
+                    <td>
+                        <span class="metric-badge metric-success">✓ OWASP ASVS L1</span>
+                        <span class="metric-badge metric-success">✓ Dep. Scan</span>
+                        <span class="metric-badge metric-success">✓ Trivy</span>
+                    </td>
+                </tr>
+            </table>
+
+            <h4 style="margin-top: 30px; color: #1a3a52;">Monitoring & Observability</h4>
+            <ul style="list-style: none; padding-left: 0; color: #666; line-height: 1.8;">
+                <li>✓ Health endpoints: /health/live, /health/ready</li>
+                <li>✓ JSON structured logs (30-90 gün saklama)</li>
+                <li>✓ Real-time monitoring ve alarm baseline</li>
+                <li>✓ Source health dashboard (admin panel)</li>
+                <li>✓ Crawl metrics tracking (CrawlRun)</li>
+                <li>✓ Performance metrics (latency, throughput)</li>
+            </ul>
+        </div>
+
+        <!-- Key Metrics -->
+        <div class="diagram-section">
+            <div class="diagram-title">8. Proje Metrikleri</div>
+
+            <table>
+                <tr>
+                    <th>Metrik</th>
+                    <th>Değer</th>
+                    <th>Not</th>
+                </tr>
+                <tr>
+                    <td><strong>Django Uygulamaları</strong></td>
+                    <td>12</td>
+                    <td>core, calls, sources, ingestion, taxonomy, vb.</td>
+                </tr>
+                <tr>
+                    <td><strong>Veritabanı Tabloları</strong></td>
+                    <td>30+</td>
+                    <td>Modeller + migrations</td>
+                </tr>
+                <tr>
+                    <td><strong>Celery Kuyrukları</strong></td>
+                    <td>7</td>
+                    <td>crawl_discovery, crawl_detail, publication, newsletter, vb.</td>
+                </tr>
+                <tr>
+                    <td><strong>API Endpoints</strong></td>
+                    <td>50+</td>
+                    <td>Public views + admin + API</td>
+                </tr>
+                <tr>
+                    <td><strong>Kaynak Adaptörleri</strong></td>
+                    <td>3+ örnek</td>
+                    <td>API, Feed, HTML adapters</td>
+                </tr>
+                <tr>
+                    <td><strong>Test Kapsamı</strong></td>
+                    <td>350+ test</td>
+                    <td>Unit + integration + fixtures</td>
+                </tr>
+                <tr>
+                    <td><strong>Code Quality</strong></td>
+                    <td>
+                        <span class="metric-badge metric-success">Ruff</span>
+                        <span class="metric-badge metric-success">mypy</span>
+                        <span class="metric-badge metric-success">bandit</span>
+                    </td>
+                    <td>Linting + type checking + security</td>
+                </tr>
+                <tr>
+                    <td><strong>Load Test (Staging)</strong></td>
+                    <td>600 req/s</td>
+                    <td>p95: 82.5ms, 0 errors</td>
+                </tr>
+                <tr>
+                    <td><strong>Kaynaklar</strong></td>
+                    <td>250+</td>
+                    <td>İthal edilen aktif kaynaklar</td>
+                </tr>
+                <tr>
+                    <td><strong>Public Çağrılar</strong></td>
+                    <td>1000+</td>
+                    <td>Üretimde yayınlanan çağrılar</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>📊 HibeRota Mimari Raporu | Tarih: 30 Haziran 2026 | Versiyon: 1.0</p>
+            <p>Django 5.2 LTS • Python 3.12 • PostgreSQL • Redis • Celery</p>
+        </div>
+    </div>
+</body>
+</html>

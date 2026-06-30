@@ -1,0 +1,8 @@
+<a href="{% url 'institution-detail' slug=institution.slug %}" class="institution-card" style="border-radius:16px;padding:22px;background:#fff;text-decoration:none;display:flex;align-items:center;gap:15px;box-shadow:0 6px 20px rgba(16,61,43,.06)">
+  <span style="width:50px;height:50px;border-radius:13px;background:#15875C;color:#fff;display:grid;place-items:center;font-weight:800;font-size:17px;flex:none">{{ institution.short_name|default:institution.name|slice:":2"|upper }}</span>
+  <div>
+    <div style="font-size:16px;font-weight:700;color:#14211B">{{ institution.name }}</div>
+    <div style="font-size:13px;color:#586B61;margin-top:3px">{{ institution.country.name_tr }} · {{ institution.get_institution_type_display }}</div>
+    <div style="font-size:12.5px;color:#15875C;font-weight:600;margin-top:5px">{{ institution.open_call_count|default:0 }} açık çağrı</div>
+  </div>
+</a>

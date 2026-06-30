@@ -1,0 +1,157 @@
+{
+  "version": 1,
+  "owner": "HibeRota operations",
+  "environment": "production",
+  "notes": [
+    "Reference rules only; apply manually in Cloudflare or translate to Terraform after zone/account IDs are available.",
+    "Do not store Cloudflare API tokens, account IDs, zone IDs, or real origin IP values in this repository."
+  ],
+  "zone_settings": {
+    "dns_proxy": "enabled",
+    "ssl_tls_mode": "full_strict",
+    "always_use_https": true,
+    "minimum_tls_version": "1.2",
+    "http3": true,
+    "brotli": true
+  },
+  "managed_protections": [
+    {
+      "name": "Cloudflare Managed Ruleset",
+      "state": "enabled",
+      "action": "managed_challenge_or_block_by_rule_severity"
+    },
+    {
+      "name": "Cloudflare OWASP Core Ruleset",
+      "state": "enabled",
+      "action": "managed_challenge_or_block_by_anomaly_score"
+    },
+    {
+      "name": "HTTP DDoS Managed Ruleset",
+      "state": "enabled",
+      "action": "default_cloudflare_ddos_action"
+    },
+    {
+      "name": "Bot Fight Mode or equivalent bot protection",
+      "state": "enabled_when_compatible",
+      "action": "managed_challenge"
+    }
+  ],
+  "custom_waf_rules": [
+    {
+      "id": "block-sensitive-files",
+      "description": "Block direct requests for repository, environment, backup, database, and source files.",
+      "expression": "(http.request.uri.path matches \"(?i)/(\\\\.env|\\\\.git|\\\\.svn|.*\\\\.(sql|sqlite|db|bak|backup|old|orig|swp|log|yml|yaml|toml|ini|py|map))$\")",
+      "action": "block",
+      "enabled": true
+    },
+    {
+      "id": "challenge-admin",
+      "description": "Challenge non-static admin traffic before it reaches Django admin.",
+      "expression": "(starts_with(http.request.uri.path, \"/admin\"))",
+      "action": "managed_challenge",
+      "enabled": true
+    },
+    {
+      "id": "challenge-country-policy-review",
+      "description": "Optional managed challenge for high-risk geographies after analytics confirm false-positive risk is acceptable.",
+      "expression": "(ip.geoip.country in {\"T1\"})",
+      "action": "managed_challenge",
+      "enabled": false
+    }
+  ],
+  "rate_limits": [
+    {
+      "id": "global-public-soft-limit",
+      "description": "Catch abusive public browsing without affecting normal readers.",
+      "expression": "(not starts_with(http.request.uri.path, \"/static/\") and not starts_with(http.request.uri.path, \"/media/\") and not starts_with(http.request.uri.path, \"/health/\"))",
+      "characteristics": ["ip.src"],
+      "requests": 600,
+      "period_seconds": 60,
+      "mitigation_timeout_seconds": 600,
+      "action": "managed_challenge",
+      "enabled": true
+    },
+    {
+      "id": "admin-login-limit",
+      "description": "Reduce brute-force pressure on Django admin.",
+      "expression": "(starts_with(http.request.uri.path, \"/admin\") and http.request.method in {\"GET\" \"POST\"})",
+      "characteristics": ["ip.src"],
+      "requests": 20,
+      "period_seconds": 60,
+      "mitigation_timeout_seconds": 900,
+      "action": "managed_challenge",
+      "enabled": true
+    },
+    {
+      "id": "contact-post-limit",
+      "description": "Limit contact form spam bursts.",
+      "expression": "(starts_with(http.request.uri.path, \"/iletisim\") and http.request.method eq \"POST\")",
+      "characteristics": ["ip.src"],
+      "requests": 5,
+      "period_seconds": 600,
+      "mitigation_timeout_seconds": 1800,
+      "action": "managed_challenge",
+      "enabled": true
+    },
+    {
+      "id": "newsletter-post-limit",
+      "description": "Limit newsletter subscription and confirmation endpoint abuse without enumerating addresses.",
+      "expression": "(starts_with(http.request.uri.path, \"/bulten\") and http.request.method eq \"POST\")",
+      "characteristics": ["ip.src"],
+      "requests": 8,
+      "period_seconds": 600,
+      "mitigation_timeout_seconds": 1800,
+      "action": "managed_challenge",
+      "enabled": true
+    },
+    {
+      "id": "survey-post-limit",
+      "description": "Limit survey submission bursts while allowing normal eligibility checks.",
+      "expression": "(starts_with(http.request.uri.path, \"/hibe-anketi\") and http.request.method eq \"POST\")",
+      "characteristics": ["ip.src"],
+      "requests": 12,
+      "period_seconds": 600,
+      "mitigation_timeout_seconds": 1800,
+      "action": "managed_challenge",
+      "enabled": true
+    },
+    {
+      "id": "api-public-limit",
+      "description": "Limit public API and embed endpoint scraping bursts.",
+      "expression": "(starts_with(http.request.uri.path, \"/api/\") or starts_with(http.request.uri.path, \"/embed/\"))",
+      "characteristics": ["ip.src"],
+      "requests": 120,
+      "period_seconds": 60,
+      "mitigation_timeout_seconds": 600,
+      "action": "managed_challenge",
+      "enabled": true
+    }
+  ],
+  "cache_rules": [
+    {
+      "id": "cache-static-assets",
+      "description": "Cache immutable static assets at the edge.",
+      "expression": "(starts_with(http.request.uri.path, \"/static/\"))",
+      "cache_eligibility": "eligible",
+      "edge_ttl_seconds": 2592000,
+      "browser_ttl_seconds": 604800,
+      "enabled": true
+    },
+    {
+      "id": "bypass-dynamic-and-health",
+      "description": "Do not cache dynamic pages, admin, forms, APIs, or healthchecks.",
+      "expression": "(starts_with(http.request.uri.path, \"/admin\") or starts_with(http.request.uri.path, \"/api/\") or starts_with(http.request.uri.path, \"/health/\") or http.request.method ne \"GET\")",
+      "cache_eligibility": "bypass",
+      "enabled": true
+    }
+  ],
+  "monitoring_signals": [
+    "waf_block_count",
+    "managed_challenge_solve_rate",
+    "rate_limit_action_count",
+    "http_429_count",
+    "origin_5xx_count",
+    "admin_path_request_count",
+    "api_request_rate"
+  ]
+}

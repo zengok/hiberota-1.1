@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "alerts": [
+    {
+      "id": "site-unavailable",
+      "signal": "GET /health/live",
+      "threshold": "non-2xx once",
+      "severity": "critical"
+    },
+    {
+      "id": "db-or-cache-unavailable",
+      "signal": "GET /health/ready",
+      "threshold": "non-2xx once",
+      "severity": "critical"
+    },
+    {
+      "id": "storage-usage-high",
+      "signal": "df MONITOR_DISK_PATH",
+      "threshold": ">= 80%",
+      "severity": "warning"
+    },
+    {
+      "id": "container-exited",
+      "signal": "docker compose ps --status=exited",
+      "threshold": "any exited service",
+      "severity": "critical"
+    },
+    {
+      "id": "backup-stale",
+      "signal": "encrypted backup age",
+      "threshold": "> 26 hours",
+      "severity": "critical"
+    },
+    {
+      "id": "admin-brute-force",
+      "signal": "admin login lockout count",
+      "threshold": "sudden spike",
+      "severity": "warning"
+    },
+    {
+      "id": "ssl-expiry",
+      "signal": "TLS certificate expiry",
+      "threshold": "< 14 days",
+      "severity": "warning"
+    }
+  ]
+}

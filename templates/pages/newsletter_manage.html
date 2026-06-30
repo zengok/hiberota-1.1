@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <section class="page-intro">
+    <div class="container py-4">
+      <h1 class="h2 fw-semibold">E-bülten yönetimi</h1>
+      <p class="text-secondary mb-0">Gönderim sıklığınızı güncelleyin veya abonelikten çıkın.</p>
+    </div>
+  </section>
+
+  <section class="container py-4">
+    {% if updated %}
+      <div class="alert alert-success" role="status">Tercihleriniz güncellendi.</div>
+    {% endif %}
+
+    {% if subscriber %}
+      <form class="newsletter-form" method="post" novalidate>
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button class="btn btn-primary" type="submit">Tercihleri kaydet</button>
+        <a class="btn btn-outline-secondary" href="{% url 'newsletter-unsubscribe' token=token %}">
+          Abonelikten çık
+        </a>
+      </form>
+    {% else %}
+      <div class="empty-state">
+        <h2 class="h5">Bağlantı geçersiz</h2>
+        <p class="text-secondary mb-0">Bu yönetim bağlantısı geçerli değil veya abonelik aktif değil.</p>
+      </div>
+    {% endif %}
+  </section>
+{% endblock %}

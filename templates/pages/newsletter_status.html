@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <section class="page-intro">
+    <div class="container py-4">
+      <h1 class="h2 fw-semibold">{{ status_title }}</h1>
+      <p class="text-secondary mb-0">{{ status_message }}</p>
+    </div>
+  </section>
+
+  <section class="container py-4">
+    <a class="btn btn-primary" href="{% url 'home' %}">Ana sayfaya dön</a>
+  </section>
+{% endblock %}

@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <section class="page-intro">
+    <div class="container py-4">
+      <h1 class="h2 fw-semibold">E-bülten tercihleri</h1>
+      <p class="text-secondary mb-0">Yeni hibe çağrılarını e-posta ile almak için çift onaylı abonelik başlatın.</p>
+    </div>
+  </section>
+
+  <section class="container py-4">
+    {% if submitted %}
+      <div class="alert alert-success" role="status">
+        Abonelik isteğiniz alındı. Onay bağlantısı için e-postanızı kontrol edin.
+      </div>
+    {% endif %}
+
+    <form class="newsletter-form" action="{% url 'newsletter-preferences' %}" method="post" novalidate>
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+        <div class="alert alert-danger" role="alert">{{ form.non_field_errors }}</div>
+      {% endif %}
+
+      {% for field in form %}
+        {% if field.is_hidden %}
+          {{ field }}
+        {% elif field.name == "consent_accepted" %}
+          <div class="form-check">
+            {{ field }}
+            <label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {% for error in field.errors %}
+              <div class="invalid-feedback d-block">{{ error }}</div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div>
+            <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% for error in field.errors %}
+              <div class="invalid-feedback d-block">{{ error }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endfor %}
+
+      <button class="btn btn-primary" type="submit">Onay e-postası gönder</button>
+    </form>
+  </section>
+{% endblock %}

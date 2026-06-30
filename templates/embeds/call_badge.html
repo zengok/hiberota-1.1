@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="{{ robots }}">
+  <base target="_blank">
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      background: #ffffff;
+      color: #18212f;
+      margin: 0;
+    }
+
+    .badge-card {
+      border: 1px solid #d9e1e7;
+      border-radius: 8px;
+      display: grid;
+      gap: 12px;
+      padding: 16px;
+    }
+
+    .source {
+      color: #5f6b7a;
+      font-size: 13px;
+      font-weight: 600;
+      margin: 0;
+    }
+
+    h1 {
+      font-size: 18px;
+      line-height: 1.35;
+      margin: 0;
+    }
+
+    dl {
+      display: grid;
+      gap: 6px;
+      margin: 0;
+    }
+
+    div {
+      display: flex;
+      gap: 8px;
+      justify-content: space-between;
+    }
+
+    dt {
+      color: #5f6b7a;
+      font-size: 13px;
+    }
+
+    dd {
+      font-size: 13px;
+      font-weight: 600;
+      margin: 0;
+      text-align: right;
+    }
+
+    a {
+      color: #0f5f8f;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    a:focus-visible {
+      outline: 3px solid #0f766e;
+      outline-offset: 3px;
+    }
+  </style>
+  <title>{{ call.title }} | HibeRota</title>
+</head>
+<body>
+  <article class="badge-card" aria-label="HibeRota çağrı kartı">
+    <p class="source">HibeRota çağrı kartı</p>
+    <h1>{{ call.title }}</h1>
+    <dl>
+      <div>
+        <dt>Kurum</dt>
+        <dd>{{ call.institution }}</dd>
+      </div>
+      <div>
+        <dt>Son tarih</dt>
+        <dd>
+          {% if call.deadline_at %}
+            {{ call.deadline_at|date:"d.m.Y" }}
+          {% else %}
+            Resmi kaynakta tarih belirtilmemiş
+          {% endif %}
+        </dd>
+      </div>
+      <div>
+        <dt>Durum</dt>
+        <dd>
+          {% if call.availability_status == "upcoming" %}Gelecek{% elif call.availability_status == "open" %}Açık{% elif call.availability_status == "closing_soon" %}Kapanmak üzere{% elif call.availability_status == "closed" %}Kapalı{% else %}Tarih belirtilmemiş{% endif %}
+        </dd>
+      </div>
+    </dl>
+    <a href="{{ request.scheme }}://{{ request.get_host }}{{ canonical_path }}" rel="noopener noreferrer">
+      HibeRota'da görüntüle
+    </a>
+  </article>
+</body>
+</html>

@@ -1,0 +1,62 @@
+{% load static %}
+<header class="site-header border-bottom bg-white">
+  <nav class="navbar navbar-expand-lg" aria-label="Ana navigasyon">
+    <div class="container">
+      <a class="navbar-brand" href="{% url 'home' %}" aria-label="HibeRota ana sayfa">
+        <img src="{% static 'img/logo.png' %}" alt="HibeRota" height="27">
+      </a>
+      <div class="d-flex align-items-center gap-2 order-lg-3 ms-auto">
+        <a class="btn btn-outline-secondary btn-sm d-none d-sm-inline-flex" href="{% url 'call-list' %}">
+          Arama
+        </a>
+        <a class="btn btn-outline-primary btn-sm favorite-shortcut" href="{% url 'favorite-list' %}" aria-label="Favoriler">
+          <span class="favorite-label-full">Favoriler</span>
+          <span class="favorite-label-compact">Favori</span>
+          <span class="badge text-bg-primary ms-1" data-favorite-count hidden>0</span>
+          <span class="visually-hidden">sayfasına git</span>
+        </a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="offcanvas"
+          data-bs-target="#mobileNavigation"
+          aria-controls="mobileNavigation"
+          aria-label="Menüyü aç"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+      </div>
+      <div class="collapse navbar-collapse d-none d-lg-flex" id="desktopNavigation">
+        <ul class="navbar-nav ms-auto me-lg-3">
+          <li class="nav-item"><a class="nav-link" href="{% url 'home' %}">Ana Sayfa</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'call-list' %}">Çağrılar</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'institution-list' %}">Kurumlar</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'blog-list' %}">Proje Rehberi</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'grant-survey' %}">Hibe Anketi</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'contact' %}">İletişim</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+  <div
+    class="offcanvas offcanvas-end"
+    tabindex="-1"
+    id="mobileNavigation"
+    aria-labelledby="mobileNavigationLabel"
+  >
+    <div class="offcanvas-header">
+      <h2 class="offcanvas-title h5" id="mobileNavigationLabel">HibeRota</h2>
+      <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Menüyü kapat"></button>
+    </div>
+    <div class="offcanvas-body">
+      <ul class="navbar-nav">
+        <li class="nav-item"><a class="nav-link" href="{% url 'home' %}">Ana Sayfa</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'call-list' %}">Çağrılar</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'institution-list' %}">Kurumlar</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'blog-list' %}">Proje Rehberi</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'grant-survey' %}">Hibe Anketi</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'contact' %}">İletişim</a></li>
+      </ul>
+    </div>
+  </div>
+</header>

@@ -1,0 +1,108 @@
+{
+  "standard": "OWASP ASVS",
+  "version": "5.0.0",
+  "verification_level": "L1",
+  "scope": "HibeRota Django public grant portal and staff-only admin",
+  "source": "https://owasp.org/www-project-application-security-verification-standard/",
+  "status_values": ["met", "partial", "planned"],
+  "controls": [
+    {
+      "id": "architecture-threat-model",
+      "area": "Architecture and threat modeling",
+      "status": "partial",
+      "evidence": ["docs/04_SECURITY.md", "docs/10_DECISIONS_AND_CHANGELOG.md"],
+      "next_action": "Create a maintained threat model with assets, trust boundaries, and abuse cases before launch."
+    },
+    {
+      "id": "authentication-admin-only",
+      "area": "Authentication",
+      "status": "met",
+      "evidence": ["apps/security/forms.py", "apps/security/totp.py", "apps/security/admin_auth.py"],
+      "next_action": "Provision real staff TOTP devices during staging."
+    },
+    {
+      "id": "session-management",
+      "area": "Session management",
+      "status": "partial",
+      "evidence": ["config/settings/production.py", "apps/security/forms.py"],
+      "next_action": "Review session timeout and re-authentication policy for critical admin actions."
+    },
+    {
+      "id": "access-control-admin",
+      "area": "Access control",
+      "status": "partial",
+      "evidence": ["config/urls.py", "apps/*/admin.py"],
+      "next_action": "Define and test Django admin groups for least-privilege operational roles."
+    },
+    {
+      "id": "input-validation-and-output-encoding",
+      "area": "Validation, sanitization, and encoding",
+      "status": "met",
+      "evidence": ["apps/blog/models.py", "apps/contact/forms.py", "apps/core/structured_data.py"],
+      "next_action": "Keep tests for XSS, structured data escaping, and form validation in CI."
+    },
+    {
+      "id": "cryptography-and-secrets",
+      "area": "Cryptography and secrets",
+      "status": "partial",
+      "evidence": [".env.example", "ops/backup/create-encrypted-backup.sh", "config/settings/production.py"],
+      "next_action": "Document production secret rotation ownership and storage location outside the repository."
+    },
+    {
+      "id": "error-handling-and-logging",
+      "area": "Error handling and logging",
+      "status": "met",
+      "evidence": ["apps/core/views.py", "apps/core/logging.py", "docs/MONITORING_LOGGING.md"],
+      "next_action": "Connect production logs to the selected monitoring backend."
+    },
+    {
+      "id": "data-protection-and-privacy",
+      "area": "Data protection and privacy",
+      "status": "partial",
+      "evidence": ["docs/CONTACT_EMAIL_REQUIREMENTS.md", "apps/newsletter/models.py", "apps/contact/models.py"],
+      "next_action": "Complete public privacy and cookie policy pages before launch."
+    },
+    {
+      "id": "communications-security",
+      "area": "Communications security",
+      "status": "met",
+      "evidence": ["config/settings/production.py", "docs/CLOUDFLARE_ORIGIN_LOCKDOWN.md", "docs/SECURITY_HEADERS.md"],
+      "next_action": "Verify strict TLS and HSTS behavior on staging and production domains."
+    },
+    {
+      "id": "security-configuration",
+      "area": "Security configuration",
+      "status": "met",
+      "evidence": ["apps/security/headers.py", "nginx/default.cloudflare.conf", "ops/cloudflare/waf-rate-limit-rules.json"],
+      "next_action": "Run staging smoke tests for sensitive file exposure and Cloudflare rules."
+    },
+    {
+      "id": "file-and-resource-handling",
+      "area": "Files and resources",
+      "status": "partial",
+      "evidence": ["docs/04_SECURITY.md", "nginx/default.conf", "nginx/default.cloudflare.conf"],
+      "next_action": "Implement and test blog image upload validation/re-encode controls when uploads are enabled."
+    },
+    {
+      "id": "ssrf-and-outbound-requests",
+      "area": "SSRF and outbound requests",
+      "status": "met",
+      "evidence": ["automation/http/client.py", "automation/http/test_client.py"],
+      "next_action": "Keep source allowlist and redirect/IP validation tests required for every new adapter."
+    },
+    {
+      "id": "dependency-and-supply-chain",
+      "area": "Dependency and supply chain",
+      "status": "partial",
+      "evidence": ["pyproject.toml", ".github/workflows/ci.yml"],
+      "next_action": "Add container image scanning and dependency update workflow."
+    },
+    {
+      "id": "backup-and-recovery",
+      "area": "Availability and recovery",
+      "status": "partial",
+      "evidence": ["ops/backup/create-encrypted-backup.sh", "ops/backup/restore-test.sh", "docs/BACKUP_RESTORE.md"],
+      "next_action": "Run the first staging restore test and record RTO/RPO evidence."
+    }
+  ]
+}

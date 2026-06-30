@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <section class="page-intro" style="padding:34px 40px 24px;border-bottom:1px solid #EEF3F0">
+    <div style="max-width:1200px;margin:0 auto;display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap">
+      <div>
+        <h1 style="margin:0 0 8px;font-size:30px;font-weight:800;letter-spacing:-.02em;color:#14211B">Hibe ve fon çağrıları</h1>
+        <p style="margin:0;font-size:15.5px;color:#586B61;max-width:560px">Yayınlanmış çağrıları ülke, kurum, hedef kitle, konu ve tarihe göre süzün.</p>
+      </div>
+      <span id="call-results-count" aria-live="polite" style="font-size:13.5px;font-weight:600;color:#586B61">{{ result_count }} sonuç</span>
+    </div>
+  </section>
+
+  <section style="padding:26px 40px 56px;max-width:1200px;margin:0 auto">
+    <div class="call-list-layout" style="display:grid;grid-template-columns:280px 1fr;gap:28px;align-items:start">
+
+      {# Filtre kenar çubuğu — masaüstü #}
+      <aside class="filter-sidebar d-none d-lg-block" aria-label="Çağrı filtreleri"
+             style="background:#fff;border-radius:16px;padding:22px;box-shadow:0 6px 20px rgba(16,61,43,.06);position:sticky;top:80px">
+        {% include "includes/call_filters.html" with filter_id_prefix="desktop" %}
+      </aside>
+
+      <div>
+        {# Araç çubuğu #}
+        <div class="list-toolbar" style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px">
+          <button class="btn btn-outline-secondary d-lg-none" type="button"
+                  data-bs-toggle="offcanvas" data-bs-target="#callFilterOffcanvas"
+                  aria-controls="callFilterOffcanvas" aria-expanded="false">Filtreler</button>
+          <form action="{% url 'call-list' %}" method="get" style="display:flex;align-items:center;gap:9px;margin-left:auto">
+            {% for key, value in sort_hidden_fields %}
+              <input type="hidden" name="{{ key }}" value="{{ value }}">
+            {% endfor %}
+            <label class="visually-hidden" for="sort-select">Sıralama</label>
+            <span style="font-size:13px;color:#8AA197">Sırala</span>
+            <select class="form-select" id="sort-select" name="siralama" data-auto-submit
+                    style="border:1px solid #D7E6DD;border-radius:10px;padding:9px 12px;font-size:14px;color:#14211B;background:#fff">
+              {% for key, option in sort_options.items %}
+                <option value="{{ key }}"{% if current_sort == key %} selected{% endif %}>{{ option.1 }}</option>
+              {% endfor %}
+            </select>
+          </form>
+        </div>
+
+        {# Aktif filtre çipleri #}
+        {% if active_filters %}
+          <div class="active-filter-list" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px" aria-label="Aktif filtreler">
+            {% for filter in active_filters %}
+              <a class="active-filter-chip" href="{{ filter.remove_url }}"
+                 style="display:inline-flex;align-items:center;gap:7px;background:#E3F4EA;color:#15875C;font-size:12.5px;font-weight:600;padding:6px 11px;border-radius:999px;text-decoration:none">
+                {{ filter.label }}: {{ filter.value }} <span style="font-size:15px;line-height:1">×</span>
+              </a>
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        {% include "includes/ad_slot.html" with slot_id=adsense_slots.call_list_top %}
+
+        <div class="call-grid">
+          {% for call in calls_page %}
+            {% include "includes/call_card.html" %}
+          {% empty %}
+            <div class="empty-state">
+              <h2 class="h5">Sonuç bulunamadı</h2>
+              <p style="color:#586B61">Filtreleri azaltarak yeniden deneyin.</p>
+              <a class="btn btn-outline-secondary" href="{% url 'call-list' %}">Tüm filtreleri temizle</a>
+            </div>
+          {% endfor %}
+        </div>
+
+        {% if calls_page.paginator.num_pages > 1 %}
+          <nav style="display:flex;align-items:center;justify-content:center;gap:16px;margin-top:30px" aria-label="Çağrı sayfaları">
+            {% if previous_page_url %}
+              <a href="{{ previous_page_url }}" style="border:1px solid #D7E6DD;background:#fff;color:#B6C4BC;border-radius:10px;padding:9px 16px;font-weight:600;font-size:13.5px;text-decoration:none">Önceki</a>
+            {% endif %}
+            <span style="font-size:13px;color:#586B61">Sayfa {{ calls_page.number }} / {{ calls_page.paginator.num_pages }}</span>
+            {% if next_page_url %}
+              <a href="{{ next_page_url }}" style="border:1px solid #15875C;background:#15875C;color:#fff;border-radius:10px;padding:9px 16px;font-weight:600;font-size:13.5px;text-decoration:none">Sonraki</a>
+            {% endif %}
+          </nav>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+
+  {# Filtre offcanvas — mobil #}
+  <div class="offcanvas offcanvas-start" tabindex="-1" id="callFilterOffcanvas" aria-labelledby="callFilterOffcanvasLabel">
+    <div class="offcanvas-header">
+      <h2 class="offcanvas-title h5" id="callFilterOffcanvasLabel">Filtreler</h2>
+      <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Filtreleri kapat"></button>
+    </div>
+    <div class="offcanvas-body">
+      {% include "includes/call_filters.html" with filter_id_prefix="mobile" %}
+    </div>
+  </div>
+{% endblock %}

@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block content %}
+<article>
+  <header class="page-intro py-4">
+    <div class="container">
+      <nav class="breadcrumb-nav" aria-label="Sayfa yolu">
+        <a href="{% url 'home' %}">Ana Sayfa</a>
+        <span>/</span>
+        <a href="{% url 'call-list' %}">Çağrılar</a>
+      </nav>
+      <div class="call-detail-header">
+        <div class="call-detail-heading">
+          <p class="text-secondary mb-2">{{ call.institution }}</p>
+          <h1 class="mb-3">{{ call.title }}</h1>
+          <div class="call-card__tags">
+            {% if call.availability_status == "open" %}
+              <span class="status-badge status-badge--open">Açık</span>
+            {% elif call.availability_status == "closing_soon" %}
+              <span class="status-badge status-badge--closing">Kapanmak üzere</span>
+            {% elif call.availability_status == "upcoming" %}
+              <span class="status-badge status-badge--upcoming">Yakında</span>
+            {% else %}
+              <span class="status-badge status-badge--closed">Kapalı</span>
+            {% endif %}
+            {% for country in call.countries.all %}
+              <span class="call-card__tag">{{ country.name_tr }}</span>
+            {% endfor %}
+            {% for audience in call.audiences.all %}
+              <span class="call-card__tag">{{ audience.name_tr }}</span>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="call-detail-actions">
+          <button class="btn btn-outline-secondary" type="button" data-favorite-toggle data-call-id="{{ call.id }}">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h12v16l-6-4-6 4z"/></svg>
+            Favori
+          </button>
+          <button class="btn btn-outline-secondary" type="button" data-share-url="{{ request.build_absolute_uri }}">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg>
+            Paylaş
+          </button>
+          <a class="btn btn-primary" href="{{ call.official_url }}" target="_blank" rel="noopener noreferrer">
+            Resmi başvuru
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section class="py-5">
+    <div class="container">
+      <div class="call-detail-layout">
+        <aside class="call-info-card" aria-label="Çağrı bilgileri">
+          <div class="filter-group__title mt-0">Çağrı bilgileri</div>
+          <dl class="call-meta">
+            <div>
+              <dt>Kimler başvurabilir</dt>
+              <dd>{% for audience in call.audiences.all %}{{ audience.name_tr }}{% if not forloop.last %}, {% endif %}{% empty %}Belirtilmemiş{% endfor %}</dd>
+            </div>
+            <div>
+              <dt>Destek miktarı</dt>
+              <dd>{% if call.funding_text %}{{ call.funding_text }}{% elif call.funding_min or call.funding_max %}{{ call.funding_min|default:"" }}–{{ call.funding_max|default:"" }} {{ call.currency }}{% else %}Belirtilmemiş{% endif %}</dd>
+            </div>
+            <div>
+              <dt>Proje süresi</dt>
+              <dd>{{ call.duration_text|default:"Belirtilmemiş" }}</dd>
+            </div>
+            {% if call.application_open_at %}
+              <div>
+                <dt>Açılış</dt>
+                <dd>{{ call.application_open_at|date:"d.m.Y" }}</dd>
+              </div>
+            {% endif %}
+            <div>
+              <dt>Son başvuru</dt>
+              <dd>
+                {% if call.deadline_at %}
+                  {{ call.deadline_at|date:"d.m.Y" }}
+                {% else %}
+                  Resmi kaynakta son başvuru tarihi belirtilmemiş
+                  <span class="deadline-badge">Tarih belirtilmemiş</span>
+                {% endif %}
+              </dd>
+            </div>
+            <div>
+              <dt>Program türü</dt>
+              <dd>{% for program in call.program_types.all %}{{ program.name_tr }}{% if not forloop.last %}, {% endif %}{% empty %}Belirtilmemiş{% endfor %}</dd>
+            </div>
+          </dl>
+        </aside>
+
+        <div class="call-detail-content">
+          {% include "includes/ad_slot.html" with slot_id=adsense_slots.call_detail_inline %}
+
+          {% if call.last_verified_at %}
+            <div class="verify-banner">
+              <span>Bu çağrı resmi kaynaktan <strong>{{ call.last_verified_at|date:"d.m.Y" }}</strong> tarihinde doğrulandı.</span>
+            </div>
+          {% endif %}
+
+          {% if call.summary %}
+            <section>
+              <h2>Kapsam</h2>
+              <p>{{ call.summary }}</p>
+            </section>
+          {% endif %}
+          {% if call.purpose %}
+            <section>
+              <h2>Amaç</h2>
+              <p>{{ call.purpose }}</p>
+            </section>
+          {% endif %}
+          {% if call.eligibility_text %}
+            <section>
+              <h2>Uygunluk</h2>
+              <p>{{ call.eligibility_text }}</p>
+            </section>
+          {% endif %}
+          {% if call.conditions_text %}
+            <section>
+              <h2>Katılım şartları</h2>
+              <p>{{ call.conditions_text }}</p>
+            </section>
+          {% endif %}
+          {% if call.application_process_text %}
+            <section>
+              <h2>Başvuru süreci</h2>
+              <p>{{ call.application_process_text }}</p>
+            </section>
+          {% endif %}
+
+          <section>
+            <h2>Resmi bağlantılar</h2>
+            {% if not call.deadline_at %}
+              <p>Başvuru yapmadan önce resmi sayfayı kontrol edin.</p>
+            {% endif %}
+            <ul>
+              <li><a href="{{ call.official_url }}" target="_blank" rel="noopener noreferrer">Resmi çağrı sayfası</a></li>
+              {% if call.canonical_source_url %}
+                <li><a href="{{ call.canonical_source_url }}" target="_blank" rel="noopener noreferrer">Kaynak kayıt bağlantısı</a></li>
+              {% endif %}
+            </ul>
+          </section>
+
+          <section>
+            <h2>Veri kaynağı</h2>
+            <dl class="source-meta source-meta--boxed">
+              <div>
+                <dt>Kaynak</dt>
+                <dd>{{ call.source.name|default:"—" }}</dd>
+              </div>
+              <div>
+                <dt>İlk görülme</dt>
+                <dd>{{ call.first_seen_at|date:"d.m.Y H:i" }}</dd>
+              </div>
+              <div>
+                <dt>Son doğrulama</dt>
+                <dd>{{ call.last_verified_at|date:"d.m.Y H:i"|default:"Henüz doğrulanmadı" }}</dd>
+              </div>
+            </dl>
+          </section>
+
+          {% if related_calls %}
+            <section>
+              <h2>İlgili çağrılar</h2>
+              <div class="call-grid">
+                {% for related_call in related_calls %}
+                  {% include "includes/call_card.html" with call=related_call %}
+                {% endfor %}
+              </div>
+            </section>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </section>
+</article>
+{% endblock %}

@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block content %}
+<article>
+  <header class="page-intro" style="background:#E9F3EE;padding:26px 40px 30px">
+    <div style="max-width:1200px;margin:0 auto">
+      <nav style="display:flex;align-items:center;gap:8px;font-size:13px;color:#586B61;margin-bottom:18px">
+        <a href="{% url 'home' %}" style="color:#15875C;text-decoration:none">Ana Sayfa</a>
+        <span>/</span>
+        <a href="{% url 'institution-list' %}" style="color:#15875C;text-decoration:none">Kurumlar</a>
+      </nav>
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:28px;flex-wrap:wrap">
+        <div style="display:flex;align-items:flex-start;gap:18px;max-width:680px">
+          <span style="width:60px;height:60px;border-radius:15px;background:#15875C;color:#fff;display:grid;place-items:center;font-weight:800;font-size:20px;flex:none">{{ institution.short_name|default:institution.name|slice:":2"|upper }}</span>
+          <div>
+            <p style="margin:0 0 6px;font-size:14px;color:#586B61">{{ institution.country.name_tr }} · {{ institution.get_institution_type_display }}</p>
+            <h1 style="margin:0 0 10px;font-size:28px;line-height:1.18;font-weight:800;letter-spacing:-.02em;color:#14211B">{{ institution }}</h1>
+            {% if institution.description %}
+              <p style="margin:0;font-size:15px;line-height:1.55;color:#586B61;max-width:520px">{{ institution.description }}</p>
+            {% endif %}
+          </div>
+        </div>
+        {% if institution.website_url %}
+          <a href="{{ institution.website_url }}" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:7px;background:#15875C;color:#fff;font-weight:600;font-size:13.5px;padding:11px 16px;border-radius:10px;text-decoration:none">
+            Resmi web sitesi <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+
+  <section style="padding:30px 40px 56px;max-width:1200px;margin:0 auto">
+    <div class="call-detail-layout">
+      <aside class="call-info-card" aria-label="Kurum bilgileri" style="background:#fff;border-radius:16px;padding:22px;box-shadow:0 6px 20px rgba(16,61,43,.06);position:sticky;top:80px">
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div>
+            <div style="font-size:12.5px;color:#8AA197;margin-bottom:2px">Ülke</div>
+            <div style="font-size:14px;color:#14211B;font-weight:500">{{ institution.country.name_tr }}</div>
+          </div>
+          <div style="border-top:1px solid #EEF3F0;padding-top:14px">
+            <div style="font-size:12.5px;color:#8AA197;margin-bottom:2px">Tür</div>
+            <div style="font-size:14px;color:#14211B;font-weight:500">{{ institution.get_institution_type_display }}</div>
+          </div>
+          <div style="border-top:1px solid #EEF3F0;padding-top:14px">
+            <div style="font-size:12.5px;color:#8AA197;margin-bottom:2px">Aktif çağrı</div>
+            <div style="font-size:14px;color:#15875C;font-weight:700">{{ institution.open_call_count|default:0 }} açık çağrı</div>
+          </div>
+          <div style="border-top:1px solid #EEF3F0;padding-top:14px">
+            <div style="font-size:12.5px;color:#8AA197;margin-bottom:2px">Veri son güncelleme</div>
+            <div style="font-size:14px;color:#14211B;font-weight:500">{{ last_data_update|date:"d.m.Y H:i"|default:"—" }}</div>
+          </div>
+        </div>
+      </aside>
+
+      <div>
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin:0 0 16px">
+          <h2 style="margin:0;font-size:20px;font-weight:700;color:#14211B">Açık çağrılar</h2>
+          <a href="{% url 'call-list' %}?kurum={{ institution.slug }}" style="font-size:13.5px;font-weight:600;color:#15875C;text-decoration:none">Tüm çağrılar</a>
+        </div>
+        <div class="call-grid" style="margin-bottom:36px">
+          {% for call in open_calls %}
+            {% include "includes/call_card.html" %}
+          {% empty %}
+            <p style="color:#586B61;font-size:14px">Bu kurum için açık çağrı bulunmuyor.</p>
+          {% endfor %}
+        </div>
+
+        <h2 style="margin:0 0 16px;font-size:20px;font-weight:700;color:#14211B">Dağılım</h2>
+        <div class="distribution-grid">
+          <div style="background:#fff;border-radius:16px;padding:22px;box-shadow:0 6px 20px rgba(16,61,43,.06)">
+            <h3 style="margin:0 0 14px;font-size:14px;font-weight:700;color:#14211B">Tema dağılımı</h3>
+            <div style="display:flex;flex-direction:column;gap:11px">
+              {% for row in theme_distribution %}
+                <div>
+                  <div style="display:flex;justify-content:space-between;font-size:13px;color:#3a4a42;margin-bottom:5px">
+                    <span>{{ row.themes__name_tr|default:"Belirtilmemiş" }}</span>
+                    <span style="font-weight:700">{{ row.call_count }}</span>
+                  </div>
+                  <div style="height:7px;background:#EEF3F0;border-radius:99px;overflow:hidden">
+                    <div style="height:100%;background:#15875C;width:{{ row.call_count }}%"></div>
+                  </div>
+                </div>
+              {% empty %}
+                <p style="font-size:13px;color:#8AA197">Henüz veri yok</p>
+              {% endfor %}
+            </div>
+          </div>
+          <div style="background:#fff;border-radius:16px;padding:22px;box-shadow:0 6px 20px rgba(16,61,43,.06)">
+            <h3 style="margin:0 0 14px;font-size:14px;font-weight:700;color:#14211B">Ülke dağılımı</h3>
+            <div style="display:flex;flex-direction:column;gap:11px">
+              {% for row in country_distribution %}
+                <div>
+                  <div style="display:flex;justify-content:space-between;font-size:13px;color:#3a4a42;margin-bottom:5px">
+                    <span>{{ row.countries__name_tr|default:"Belirtilmemiş" }}</span>
+                    <span style="font-weight:700">{{ row.call_count }}</span>
+                  </div>
+                  <div style="height:7px;background:#EEF3F0;border-radius:99px;overflow:hidden">
+                    <div style="height:100%;background:#15875C;width:{{ row.call_count }}%"></div>
+                  </div>
+                </div>
+              {% empty %}
+                <p style="font-size:13px;color:#8AA197">Henüz veri yok</p>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</article>
+{% endblock %}

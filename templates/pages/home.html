@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+  {# Hero #}
+  <section class="page-intro" style="background:#E9F3EE;padding:58px 40px 60px;margin:0">
+    <div style="max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1.15fr .85fr;gap:48px;align-items:center">
+      <div>
+        <div style="display:inline-flex;align-items:center;gap:7px;background:#fff;color:#15875C;border:1px solid #CBE6D8;padding:6px 13px;border-radius:999px;font-size:12.5px;font-weight:700;margin-bottom:22px">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg>
+          Her çağrı resmi kaynağa kadar doğrulanır
+        </div>
+        <h1 style="margin:0 0 16px;font-size:42px;line-height:1.1;font-weight:800;letter-spacing:-.022em;color:#14211B">Hibe ve fon çağrılarını tek yerden takip edin</h1>
+        <p style="margin:0 0 28px;font-size:17.5px;line-height:1.55;color:#586B61;max-width:520px">Akademisyenler, öğrenciler, araştırmacılar ve kurumlar için resmi kaynaklardan derlenen, doğrulanabilir proje çağrıları.</p>
+        <form class="home-search" action="/cagrilar/" method="get" role="search" style="display:flex;gap:10px;max-width:540px">
+          <div style="flex:1;display:flex;align-items:center;gap:11px;background:#fff;border:1px solid #CBE6D8;border-radius:13px;padding:0 15px;box-shadow:0 4px 14px rgba(16,61,43,.06)">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#8AA197" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <label class="visually-hidden" for="home-search-query">Hibe veya fon ara</label>
+            <input class="form-control" id="home-search-query" name="q" type="search" placeholder="Anahtar kelime, kurum veya ülke" autocomplete="off" style="border:0;outline:0;padding:15px 0;font-size:15px;color:#1e2a24;background:transparent;box-shadow:none">
+          </div>
+          <button class="btn btn-primary" type="submit" style="border-radius:13px;padding:0 28px;font-weight:600;font-size:15px">Ara</button>
+        </form>
+        <div style="display:flex;gap:26px;margin-top:22px;font-size:13.5px;color:#586B61">
+          <span><strong style="color:#14211B;font-weight:700">{{ total_calls_count|default:"1.240" }}</strong> aktif çağrı</span>
+          <span><strong style="color:#14211B;font-weight:700">{{ total_institutions_count|default:"320" }}</strong> kurum</span>
+          <span><strong style="color:#14211B;font-weight:700">{{ total_countries_count|default:"48" }}</strong> ülke</span>
+        </div>
+      </div>
+      {% if hero_call %}
+      <div style="background:#fff;border-radius:20px;padding:22px;box-shadow:0 18px 46px rgba(16,61,43,.12)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <span style="display:inline-flex;align-items:center;gap:6px;background:#E3F4EA;color:#15875C;font-size:12px;font-weight:700;padding:5px 11px;border-radius:999px">
+            <span style="width:6px;height:6px;border-radius:50%;background:#15875C"></span>Açık
+          </span>
+          <span style="display:inline-flex;align-items:center;gap:6px;color:#15875C;font-size:12.5px;font-weight:700">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg>Doğrulandı
+          </span>
+        </div>
+        <h3 style="margin:0 0 5px;font-size:17px;line-height:1.3;font-weight:700;color:#14211B">{{ hero_call.title }}</h3>
+        <p style="margin:0 0 16px;font-size:13.5px;color:#586B61">{{ hero_call.institution }}</p>
+        {% if hero_call.deadline_at %}
+        <div style="display:flex;align-items:center;gap:8px;font-size:13.5px;color:#3a4a42;padding-bottom:14px;border-bottom:1px dashed #D7E6DD">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#586B61" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="8" y1="3" x2="8" y2="6"/><line x1="16" y1="3" x2="16" y2="6"/></svg>
+          Son başvuru {{ hero_call.deadline_at|date:"d.m.Y" }}
+        </div>
+        {% endif %}
+        <a href="{% url 'call-detail' slug=hero_call.slug pk=hero_call.id %}" style="display:flex;align-items:center;justify-content:center;gap:7px;background:#15875C;color:#fff;border-radius:11px;padding:12px;font-size:14px;font-weight:600;text-decoration:none;margin-top:14px">
+          Çağrı detayları
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+        </a>
+      </div>
+      {% endif %}
+    </div>
+  </section>
+
+  {# Hızlı başlangıç #}
+  <section style="padding:46px 40px 6px;max-width:1200px;margin:0 auto">
+    <h2 style="margin:0 0 18px;font-size:12.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8AA197">Hızlı başlangıç</h2>
+    <div class="quick-start-grid">
+      <a class="quick-start-card" href="/cagrilar/?ulke=TR">
+        <span class="quick-start-card__icon" style="background:#E3F4EA;color:#15875C">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+        </span>
+        <span style="font-size:15px;font-weight:700;color:#14211B">Türkiye çağrıları</span>
+        <span style="font-size:13px;color:#586B61;line-height:1.4">Yurt içi kurumların açık çağrıları</span>
+      </a>
+      <a class="quick-start-card" href="/cagrilar/?kapsam=dunya">
+        <span class="quick-start-card__icon" style="background:#E3F4EA;color:#15875C">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 4 5.7 4 9s-1.5 6.5-4 9c-2.5-2.5-4-5.7-4-9s1.5-6.5 4-9z"/></svg>
+        </span>
+        <span style="font-size:15px;font-weight:700;color:#14211B">Dünya çağrıları</span>
+        <span style="font-size:13px;color:#586B61;line-height:1.4">Uluslararası fon programları</span>
+      </a>
+      <a class="quick-start-card" href="/cagrilar/?siralama=son-tarih">
+        <span class="quick-start-card__icon" style="background:#FFF1E0;color:#B45309">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        </span>
+        <span style="font-size:15px;font-weight:700;color:#14211B">Yaklaşan son tarihler</span>
+        <span style="font-size:13px;color:#586B61;line-height:1.4">Kapanmak üzere olan çağrılar</span>
+      </a>
+      <a class="quick-start-card" href="{% url 'grant-survey' %}">
+        <span class="quick-start-card__icon" style="background:#E3F4EA;color:#15875C">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"/><path d="M20 12v7H4V5h11"/></svg>
+        </span>
+        <span style="font-size:15px;font-weight:700;color:#14211B">Hibe Anketi</span>
+        <span style="font-size:13px;color:#586B61;line-height:1.4">Profilinize uygun çağrıları bulun</span>
+      </a>
+    </div>
+  </section>
+
+  {# Son Türkiye çağrıları #}
+  <section style="padding:40px 40px 6px;max-width:1200px;margin:0 auto" aria-labelledby="recent-turkey-title">
+    <div class="section-heading">
+      <h2 class="h4 mb-0" id="recent-turkey-title">Son Türkiye çağrıları</h2>
+      <a href="/cagrilar/?ulke=TR">Tümünü gör <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>
+    </div>
+    <div class="call-grid">
+      {% for call in recent_turkey_calls %}
+        {% include "includes/call_card.html" %}
+      {% empty %}
+        <p class="text-secondary mb-0">Henüz yayınlanmış Türkiye çağrısı yok.</p>
+      {% endfor %}
+    </div>
+  </section>
+
+  {# Öne çıkan kurumlar #}
+  <section style="padding:40px 40px 6px;max-width:1200px;margin:0 auto" aria-labelledby="featured-institutions-title">
+    <div class="section-heading">
+      <h2 class="h4 mb-0" id="featured-institutions-title">Öne çıkan kurumlar</h2>
+      <a href="{% url 'institution-list' %}">Tümünü gör <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>
+    </div>
+    <div class="institution-grid">
+      {% for institution in featured_institutions %}
+        <a href="{% url 'institution-detail' slug=institution.slug %}" style="border-radius:16px;padding:20px;background:#fff;text-decoration:none;display:flex;flex-direction:column;gap:5px;box-shadow:0 6px 20px rgba(16,61,43,.06)" class="institution-card">
+          <span style="width:42px;height:42px;border-radius:12px;background:#15875C;color:#fff;display:grid;place-items:center;font-weight:800;font-size:15px;margin-bottom:6px">{{ institution.short_name|default:institution.name|slice:":2"|upper }}</span>
+          <span style="font-size:15px;font-weight:700;color:#14211B">{{ institution.name }}</span>
+          <span style="font-size:12.5px;color:#586B61">{{ institution.country.name_tr }} · {{ institution.open_call_count|default:0 }} açık çağrı</span>
+        </a>
+      {% empty %}
+        <p class="text-secondary mb-0">Henüz öne çıkan kurum yok.</p>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section data-favorites-panel hidden style="padding:40px 40px 6px;max-width:1200px;margin:0 auto" aria-labelledby="favorite-calls-title">
+    <div class="section-heading">
+      <h2 class="h4 mb-0" id="favorite-calls-title">Favorileriniz</h2>
+      <a href="{% url 'favorite-list' %}">Favorileri aç</a>
+    </div>
+    <p class="text-secondary mb-0">Bu cihazda sakladığınız çağrılar favoriler sayfasında gösterilir.</p>
+  </section>
+
+  {# Son dünya çağrıları #}
+  <section style="padding:40px 40px 6px;max-width:1200px;margin:0 auto" aria-labelledby="recent-world-title">
+    <div class="section-heading">
+      <h2 class="h4 mb-0" id="recent-world-title">Son dünya çağrıları</h2>
+      <a href="/cagrilar/?kapsam=dunya">Tümünü gör <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>
+    </div>
+    <div class="call-grid">
+      {% for call in recent_world_calls %}
+        {% include "includes/call_card.html" %}
+      {% empty %}
+        <p class="text-secondary mb-0">Henüz yayınlanmış dünya çağrısı yok.</p>
+      {% endfor %}
+    </div>
+  </section>
+
+  {# E-bülten bandı #}
+  <section style="padding:38px 40px 56px;max-width:1200px;margin:0 auto">
+    <div class="newsletter-band" style="background:#0E3D2B;border-radius:20px;padding:40px;display:flex;align-items:center;justify-content:space-between;gap:30px;flex-wrap:wrap">
+      <div>
+        <h2 style="margin:0 0 7px;font-size:23px;font-weight:800;color:#fff">Yeni çağrıları kaçırmayın</h2>
+        <p style="margin:0;font-size:15px;color:#A9CDBB">İlgi alanlarınıza göre haftalık çağrı özetini e-posta ile alın.</p>
+      </div>
+      <a class="btn" href="{% url 'newsletter-preferences' %}" style="background:#fff;color:#0E3D2B;border:0;border-radius:11px;padding:13px 24px;font-weight:700;font-size:14px;text-decoration:none">E-bülten tercihleri</a>
+    </div>
+  </section>
+{% endblock %}

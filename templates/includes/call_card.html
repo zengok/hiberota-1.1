@@ -1,0 +1,62 @@
+{% load static %}
+<article class="call-card">
+  <div class="call-card__top">
+    {% if call.availability_status == "open" %}
+      <span class="status-badge status-badge--open">Açık</span>
+    {% elif call.availability_status == "closing_soon" %}
+      <span class="status-badge status-badge--closing">Kapanmak üzere</span>
+    {% elif call.availability_status == "upcoming" %}
+      <span class="status-badge status-badge--upcoming">Yakında</span>
+    {% else %}
+      <span class="status-badge status-badge--closed">Kapalı</span>
+    {% endif %}
+
+    <button class="favorite-toggle" type="button"
+            data-favorite-toggle data-call-id="{{ call.id }}"
+            aria-pressed="false" aria-label="Favorilere ekle">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="1.8" stroke-linejoin="round"><path d="M6 4h12v16l-6-4-6 4z"/></svg>
+    </button>
+  </div>
+
+  <h3><a href="{% url 'call-detail' slug=call.slug pk=call.id %}">{{ call.title }}</a></h3>
+  <p class="call-card__inst">
+    {{ call.institution }}
+    {% with countries=call.countries.all %}
+      {% if countries %}· {% for c in countries %}{{ c.name_tr }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}
+    {% endwith %}
+  </p>
+
+  {% with audiences=call.audiences.all %}
+    {% if audiences %}
+      <div class="call-card__tags">
+        {% for a in audiences|slice:":2" %}
+          <span class="call-card__tag">{{ a.name_tr }}</span>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <div class="call-card__deadline">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="1.8" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2"/>
+      <line x1="3" y1="9" x2="21" y2="9"/><line x1="8" y1="3" x2="8" y2="6"/><line x1="16" y1="3" x2="16" y2="6"/></svg>
+    {% if call.deadline_at %}
+      Son başvuru {{ call.deadline_at|date:"d.m.Y" }}
+      {% if call.days_left is not None %}
+        {% if call.days_left <= 10 %}
+          <span class="deadline-badge deadline-badge--urgent">{{ call.days_left }} gün</span>
+        {% else %}
+          <span class="deadline-badge">{{ call.days_left }} gün</span>
+        {% endif %}
+      {% endif %}
+    {% else %}
+      Resmi kaynakta tarih belirtilmemiş
+      <span class="deadline-badge">Tarih belirtilmemiş</span>
+    {% endif %}
+  </div>
+
+  <div class="call-card__verify">
+    Resmi kaynak · {% if call.last_verified_at %}{{ call.last_verified_at|timesince }} önce doğrulandı{% else %}henüz doğrulanmadı{% endif %}
+  </div>
+</article>

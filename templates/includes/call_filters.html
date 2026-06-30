@@ -1,0 +1,194 @@
+<form action="{% url 'call-list' %}" method="get" class="call-filter-form" aria-describedby="call-results-count">
+  <div>
+    <label class="form-label" for="{{ filter_id_prefix }}-filter-q">Metin arama</label>
+    <input
+      class="form-control"
+      id="{{ filter_id_prefix }}-filter-q"
+      name="q"
+      type="search"
+      value="{{ filters.values.q }}"
+      placeholder="Çağrı, kurum veya ülke"
+    >
+  </div>
+
+  <div class="quick-filter-row" aria-label="Hızlı filtreler">
+    <a class="btn btn-outline-primary btn-sm" href="{{ filters.quick_turkey_url }}">Türkiye</a>
+    <a class="btn btn-outline-primary btn-sm" href="{{ filters.quick_europe_url }}">Avrupa</a>
+  </div>
+
+  <div>
+    <label class="form-label" for="{{ filter_id_prefix }}-filter-country">Ülke</label>
+    <select class="form-select" id="{{ filter_id_prefix }}-filter-country" name="ulke">
+      <option value="">Tümü</option>
+      {% for country in filters.countries %}
+        <option value="{{ country.code }}"{% if filters.values.ulke == country.code %} selected{% endif %}>
+          {{ country.name_tr }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div>
+    <label class="form-label" for="{{ filter_id_prefix }}-filter-region">Bölge</label>
+    <select class="form-select" id="{{ filter_id_prefix }}-filter-region" name="bolge">
+      <option value="">Tümü</option>
+      {% for region in filters.regions %}
+        <option value="{{ region.key }}"{% if filters.values.bolge == region.key %} selected{% endif %}>
+          {{ region.name_tr }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div>
+    <label class="form-label" for="{{ filter_id_prefix }}-filter-institution">Kurum</label>
+    <select class="form-select" id="{{ filter_id_prefix }}-filter-institution" name="kurum">
+      <option value="">Tümü</option>
+      {% for institution in filters.institutions %}
+        <option value="{{ institution.slug }}"{% if filters.values.kurum == institution.slug %} selected{% endif %}>
+          {{ institution }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div>
+    <label class="form-label" for="{{ filter_id_prefix }}-filter-audience">Hedef kitle</label>
+    <select class="form-select" id="{{ filter_id_prefix }}-filter-audience" name="hedef">
+      <option value="">Tümü</option>
+      {% for audience in filters.audiences %}
+        <option value="{{ audience.key }}"{% if filters.values.hedef == audience.key %} selected{% endif %}>
+          {{ audience.name_tr }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div>
+    <label class="form-label" for="{{ filter_id_prefix }}-filter-sector">Sektör</label>
+    <select class="form-select" id="{{ filter_id_prefix }}-filter-sector" name="sektor">
+      <option value="">Tümü</option>
+      {% for sector in filters.sectors %}
+        <option value="{{ sector.key }}"{% if filters.values.sektor == sector.key %} selected{% endif %}>
+          {{ sector.name_tr }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div>
+    <label class="form-label" for="{{ filter_id_prefix }}-filter-theme">Tema</label>
+    <select class="form-select" id="{{ filter_id_prefix }}-filter-theme" name="tema">
+      <option value="">Tümü</option>
+      {% for theme in filters.themes %}
+        <option value="{{ theme.key }}"{% if filters.values.tema == theme.key %} selected{% endif %}>
+          {{ theme.name_tr }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div>
+    <label class="form-label" for="{{ filter_id_prefix }}-filter-program">Program türü</label>
+    <select class="form-select" id="{{ filter_id_prefix }}-filter-program" name="program">
+      <option value="">Tümü</option>
+      {% for program in filters.program_types %}
+        <option value="{{ program.key }}"{% if filters.values.program == program.key %} selected{% endif %}>
+          {{ program.name_tr }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div>
+    <label class="form-label" for="{{ filter_id_prefix }}-filter-status">Durum</label>
+    <select class="form-select" id="{{ filter_id_prefix }}-filter-status" name="durum">
+      <option value="">Tümü</option>
+      {% for status, label in filters.statuses.items %}
+        <option value="{{ status }}"{% if filters.values.durum == status %} selected{% endif %}>
+          {{ label }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div>
+    <label class="form-label" for="{{ filter_id_prefix }}-filter-currency">Finansman para birimi</label>
+    <select class="form-select" id="{{ filter_id_prefix }}-filter-currency" name="para_birimi">
+      <option value="">Tümü</option>
+      {% for currency in filters.currencies %}
+        <option value="{{ currency }}"{% if filters.values.para_birimi == currency %} selected{% endif %}>
+          {{ currency }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <fieldset>
+    <legend>Yayın tarihi</legend>
+    <label class="form-label" for="{{ filter_id_prefix }}-filter-published-start">Başlangıç</label>
+    <input
+      class="form-control"
+      id="{{ filter_id_prefix }}-filter-published-start"
+      name="yayin_baslangic"
+      type="date"
+      value="{{ filters.values.yayin_baslangic }}"
+    >
+    <label class="form-label mt-2" for="{{ filter_id_prefix }}-filter-published-end">Bitiş</label>
+    <input
+      class="form-control"
+      id="{{ filter_id_prefix }}-filter-published-end"
+      name="yayin_bitis"
+      type="date"
+      value="{{ filters.values.yayin_bitis }}"
+    >
+  </fieldset>
+
+  <fieldset>
+    <legend>Açılış tarihi</legend>
+    <label class="form-label" for="{{ filter_id_prefix }}-filter-open-start">Başlangıç</label>
+    <input
+      class="form-control"
+      id="{{ filter_id_prefix }}-filter-open-start"
+      name="acilis_baslangic"
+      type="date"
+      value="{{ filters.values.acilis_baslangic }}"
+    >
+    <label class="form-label mt-2" for="{{ filter_id_prefix }}-filter-open-end">Bitiş</label>
+    <input
+      class="form-control"
+      id="{{ filter_id_prefix }}-filter-open-end"
+      name="acilis_bitis"
+      type="date"
+      value="{{ filters.values.acilis_bitis }}"
+    >
+  </fieldset>
+
+  <fieldset>
+    <legend>Son başvuru aralığı</legend>
+    <label class="form-label" for="{{ filter_id_prefix }}-filter-deadline-start">Başlangıç</label>
+    <input
+      class="form-control"
+      id="{{ filter_id_prefix }}-filter-deadline-start"
+      name="son_tarih_baslangic"
+      type="date"
+      value="{{ filters.values.son_tarih_baslangic }}"
+    >
+    <label class="form-label mt-2" for="{{ filter_id_prefix }}-filter-deadline-end">Bitiş</label>
+    <input
+      class="form-control"
+      id="{{ filter_id_prefix }}-filter-deadline-end"
+      name="son_tarih_bitis"
+      type="date"
+      value="{{ filters.values.son_tarih_bitis }}"
+    >
+  </fieldset>
+
+  <div class="filter-actions">
+    <button class="btn btn-primary" type="submit">Uygula</button>
+    <a class="btn btn-outline-secondary" href="{% url 'call-list' %}">Temizle</a>
+    <button class="btn btn-outline-secondary d-lg-none" type="button" data-bs-dismiss="offcanvas">
+      Kapat
+    </button>
+  </div>
+</form>

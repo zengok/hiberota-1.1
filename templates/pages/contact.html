@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <section class="page-intro" style="padding:34px 40px 24px;border-bottom:1px solid #EEF3F0">
+    <div style="max-width:1200px;margin:0 auto">
+      <h1 style="margin:0 0 8px;font-size:30px;font-weight:800;letter-spacing:-.02em;color:#14211B">İletişim</h1>
+      <p style="margin:0;font-size:15.5px;color:#586B61;max-width:600px">Kaynak önerisi, düzeltme talebi veya genel mesajlarınızı iletin.</p>
+    </div>
+  </section>
+
+  <section style="padding:30px 40px 60px;max-width:1200px;margin:0 auto">
+    <div class="contact-layout">
+      <form class="contact-form" action="{% url 'contact' %}" method="post" novalidate style="background:#fff;border-radius:18px;padding:26px;box-shadow:0 8px 26px rgba(16,61,43,.07)">
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+          <div class="alert alert-danger" role="alert">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        {% if submitted %}
+          <div style="display:flex;align-items:center;gap:9px;background:#E3F4EA;border:1px solid #CBE6D8;border-radius:11px;padding:11px 14px;margin-bottom:22px">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#15875C" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+            <span style="font-size:13.5px;color:#14211B;font-weight:500">Mesajınız alındı. Gerekirse ekip e-posta üzerinden iletişime geçer.</span>
+          </div>
+        {% endif %}
+
+        {% for field in form %}
+          {% if field.is_hidden %}
+            {{ field }}
+          {% elif field.name == "privacy_accepted" %}
+            <label style="display:flex;align-items:flex-start;gap:9px;font-size:13px;color:#586B61;margin-bottom:20px;cursor:pointer">
+              {{ field }}
+              {{ field.label }}
+            </label>
+            {% for error in field.errors %}
+              <div class="invalid-feedback d-block">{{ error }}</div>
+            {% endfor %}
+          {% else %}
+            <div style="margin-bottom:16px">
+              <label style="display:block;font-size:13px;font-weight:600;color:#14211B;margin-bottom:7px" for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {{ field }}
+              {% for error in field.errors %}
+                <div class="invalid-feedback d-block">{{ error }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endfor %}
+
+        <button class="btn btn-primary" type="submit" style="border-radius:11px;padding:13px 26px;font-weight:600;font-size:15px">Mesaj gönder</button>
+      </form>
+
+      <aside style="background:#F1F6F3;border-radius:18px;padding:24px">
+        <div style="font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#8AA197;margin-bottom:14px">Yardımcı olabilir</div>
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div>
+            <div style="font-size:14px;font-weight:700;color:#14211B;margin-bottom:3px">Yeni kaynak öner</div>
+            <p style="margin:0;font-size:13px;line-height:1.5;color:#586B61">Listede olmayan resmi bir çağrı kaynağını bize iletin.</p>
+          </div>
+          <div style="border-top:1px solid #E2EAE5;padding-top:16px">
+            <div style="font-size:14px;font-weight:700;color:#14211B;margin-bottom:3px">Düzeltme bildir</div>
+            <p style="margin:0;font-size:13px;line-height:1.5;color:#586B61">Bir çağrıda hatalı bilgi gördüyseniz hızlıca düzeltelim.</p>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </section>
+{% endblock %}
