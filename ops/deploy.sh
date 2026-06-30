@@ -74,8 +74,8 @@ ssh -i "${SSH_KEY}" "${REMOTE_USER}@${REMOTE_HOST}" "
   sudo docker compose ps
 
   echo '--- Healthcheck ---'
-  curl -fsS http://127.0.0.1:8080/health/live
-  curl -fsS http://127.0.0.1:8080/health/ready
+  curl -fsS -H 'Host: hiberota.com' http://127.0.0.1:8080/health/live
+  curl -fsS -H 'Host: hiberota.com' http://127.0.0.1:8080/health/ready
 
   echo '--- Web container logları (entrypoint çıktısı) ---'
   sudo docker compose logs --tail=50 web
