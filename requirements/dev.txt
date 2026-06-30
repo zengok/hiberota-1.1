@@ -5,4 +5,4 @@ mypy>=1.10,<2
 pip-audit>=2.7,<3
 pytest>=9.0.3,<10
 pytest-django>=4.8,<5
-ruff>=0.5,<1
+ruff>=0.15.20,<1
