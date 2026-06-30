@@ -4,6 +4,7 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 from automation.http.client import SafeHttpResponse
+from django.core.cache import cache
 from django.test import TestCase
 
 from apps.calls.models import GrantCall
@@ -17,6 +18,7 @@ FIXTURES_DIR = Path(__file__).resolve().parents[2] / "automation" / "adapters" /
 
 class SourceCrawlTaskTests(TestCase):
     def setUp(self) -> None:
+        cache.clear()
         self.country = Country.objects.create(code="TR", name_tr="Turkiye", name_en="Turkey")
         self.institution = Institution.objects.create(country=self.country, name="Kurum", slug="kurum")
         self.source = Source.objects.create(
@@ -64,20 +66,21 @@ class SourceCrawlTaskTests(TestCase):
         self.assertEqual(self.source.consecutive_failures, 0)
 
     @patch("apps.sources.tasks.fetch_url_with_retries", side_effect=RuntimeError("network failed"))
-    def test_crawl_source_records_failure_before_reraising(self, fetch_url: Mock) -> None:
-        with self.assertRaises(RuntimeError):
-            crawl_source(self.source.id)
+    def test_crawl_source_records_item_failure_and_continues(self, fetch_url: Mock) -> None:
+        # Item-level failures are caught and logged; the run completes so other items can be processed.
+        result = crawl_source(self.source.id)
 
         fetch_url.assert_called_once()
+        self.assertEqual(result, "persisted:0")
         self.source.refresh_from_db()
-        self.assertIsNotNone(self.source.last_failure_at)
-        self.assertEqual(self.source.consecutive_failures, 1)
+        self.assertIsNotNone(self.source.last_success_at)
+        self.assertEqual(self.source.consecutive_failures, 0)
         self.assertEqual(GrantCall.objects.count(), 0)
         run = CrawlRun.objects.get()
         item = CrawlItem.objects.get()
-        self.assertEqual(run.status, CrawlRun.Status.FAILED)
+        self.assertEqual(run.status, CrawlRun.Status.COMPLETED)
         self.assertEqual(run.failed_count, 1)
-        self.assertEqual(run.error_code, "RuntimeError")
+        self.assertEqual(run.error_code, "")
         self.assertEqual(item.status, CrawlItem.Status.FAILED)
 
     def test_safe_http_request_uses_source_config_and_host_allowlist(self) -> None:

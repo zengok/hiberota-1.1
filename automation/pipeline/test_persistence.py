@@ -359,7 +359,7 @@ class ParsedCallPersistenceTests(TestCase):
         audience_keys: tuple[str, ...] = ("sme",),
         raw_metadata: dict[str, str] | None = None,
     ) -> ParsedCall:
-        deadline = deadline_at if deadline_at is not None else self.fetched_at + timedelta(days=30)
+        deadline: datetime | None = deadline_at if deadline_at is not None else self.fetched_at + timedelta(days=30)
         if not include_deadline:
             deadline = None
         return ParsedCall(

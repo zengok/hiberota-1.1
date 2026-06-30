@@ -206,6 +206,12 @@ def _catalog_config(row: dict[str, Any]) -> dict[str, Any]:
         "robots_checked_at": _clean(row.get("robots_checked_at")),
         "notes": _clean(row.get("notes")),
     }
+    institution_name = _clean(row.get("institution_name"))
+    if institution_name and not config.get("institution_name_override"):
+        config["institution_name_override"] = institution_name
+    country_code = _clean(row.get("country_code")).upper()
+    if country_code and country_code not in {"XX", ""} and not config.get("country_codes_override"):
+        config["country_codes_override"] = [country_code]
     return config
 
 

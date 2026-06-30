@@ -65,6 +65,18 @@
           {% endfor %}
         </div>
 
+        {% if closed_calls %}
+          <div style="display:flex;align-items:baseline;justify-content:space-between;margin:0 0 16px">
+            <h2 style="margin:0;font-size:20px;font-weight:700;color:#14211B">Kapanan çağrılar</h2>
+            <a href="{% url 'call-list' %}?kurum={{ institution.slug }}&durum=closed" style="font-size:13.5px;font-weight:600;color:#15875C;text-decoration:none">Arşivi gör</a>
+          </div>
+          <div class="call-grid" style="margin-bottom:36px">
+            {% for call in closed_calls %}
+              {% include "includes/call_card.html" %}
+            {% endfor %}
+          </div>
+        {% endif %}
+
         <h2 style="margin:0 0 16px;font-size:20px;font-weight:700;color:#14211B">Dağılım</h2>
         <div class="distribution-grid">
           <div style="background:#fff;border-radius:16px;padding:22px;box-shadow:0 6px 20px rgba(16,61,43,.06)">

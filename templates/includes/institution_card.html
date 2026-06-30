@@ -3,6 +3,7 @@
   <div>
     <div style="font-size:16px;font-weight:700;color:#14211B">{{ institution.name }}</div>
     <div style="font-size:13px;color:#586B61;margin-top:3px">{{ institution.country.name_tr }} · {{ institution.get_institution_type_display }}</div>
-    <div style="font-size:12.5px;color:#15875C;font-weight:600;margin-top:5px">{{ institution.open_call_count|default:0 }} açık çağrı</div>
+    <div style="font-size:12.5px;color:#15875C;font-weight:600;margin-top:5px">Aktif açık çağrı: {{ institution.open_call_count|default:0 }}</div>
+    <div style="font-size:12.5px;color:#586B61;margin-top:3px">Toplam yayınlanmış çağrı: {{ institution.published_call_count|default:0 }}</div>
   </div>
 </a>

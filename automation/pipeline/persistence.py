@@ -152,11 +152,15 @@ def _upsert_grant_call(
         fingerprint=fingerprint,
     )
     if grant_call is None:
-        return GrantCall.objects.create(
-            canonical_source_url=parsed_call.canonical_source_url,
-            first_seen_at=now,
-            **values,
-        ), True, requires_review
+        return (
+            GrantCall.objects.create(
+                canonical_source_url=parsed_call.canonical_source_url,
+                first_seen_at=now,
+                **values,
+            ),
+            True,
+            requires_review,
+        )
 
     effective_requires_review = requires_review
     if grant_call.workflow_status == GrantCall.WorkflowStatus.REJECTED:
@@ -215,11 +219,7 @@ def _sync_taxonomy(grant_call: GrantCall, parsed_call: ParsedCall) -> None:
 
 def _resolve_audience_keys(audience_keys: tuple[str, ...]) -> tuple[str, ...]:
     candidate_keys = tuple(
-        dict.fromkeys(
-            alias
-            for key in audience_keys
-            for alias in AUDIENCE_KEY_ALIASES.get(key, (key,))
-        )
+        dict.fromkeys(alias for key in audience_keys for alias in AUDIENCE_KEY_ALIASES.get(key, (key,)))
     )
     existing_keys = set(AudienceType.objects.filter(key__in=candidate_keys).values_list("key", flat=True))
     return tuple(key for key in candidate_keys if key in existing_keys)

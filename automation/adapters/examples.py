@@ -75,7 +75,7 @@ class StaticHtmlAdapter:
         if result.item.metadata.get("kind") == "detail":
             return ()
 
-        max_links = int(context.settings.get("max_detail_links") or 5)
+        max_links = int(context.settings.get("max_detail_links") or 20)
         candidates = _extract_detail_links(
             html=result.body_text,
             base_url=result.final_url,
@@ -156,6 +156,7 @@ class StaticHtmlAdapter:
 
 
 _DEFAULT_DETAIL_KEYWORDS = (
+    # English
     "apply",
     "application",
     "call",
@@ -166,9 +167,23 @@ _DEFAULT_DETAIL_KEYWORDS = (
     "opportunit",
     "proposal",
     "proposals",
+    # Turkish
+    "basvur",
+    "başvur",
+    "cagri",
+    "çağrı",
+    "destek",
+    "hibe",
+    "fon",
+    "proje",
+    "duyuru",
+    "ilan",
+    "program",
+    "burs",
 )
 
 _DEFAULT_EXCLUDED_DETAIL_KEYWORDS = (
+    # English
     "about",
     "annual",
     "apply-for-funding",
@@ -203,6 +218,23 @@ _DEFAULT_EXCLUDED_DETAIL_KEYWORDS = (
     "why-applications-dont-always-succeed",
     "what-we-do",
     "what-we-offer",
+    # Turkish — genel navigasyon linkleri hariç tut
+    "hakkinda",
+    "hakkimizda",
+    "iletisim",
+    "kurumsal",
+    "mevzuat",
+    "yayinlar",
+    "haberler",
+    "basin",
+    "tarihce",
+    "misyon",
+    "vizyon",
+    "sss",
+    "sikca-sorulan",
+    "kvkk",
+    "gizlilik",
+    "cerez",
 )
 
 
@@ -227,12 +259,25 @@ def _extract_meta_content(html: str, name_or_property: str) -> str:
     return ""
 
 
+_STATUS_LABELS = (
+    # English
+    "Opportunity status",
+    "Status",
+    "Call status",
+    # Turkish
+    "Çağrı Durumu",
+    "Durum",
+    "Başvuru Durumu",
+    "İlan Durumu",
+)
+
+
 def _extract_source_status(html: str, settings: Any) -> str:
     configured_status = _first_regex_match(html, _tuple_setting(_setting_value(settings, "status_regex_patterns")))
     status_text = _first_non_empty(
         configured_status,
         _field_item_after_class(html, "field-award-status"),
-        _field_text_after_label(html, ("Opportunity status", "Status", "Call status")),
+        _field_text_after_label(html, _STATUS_LABELS),
     )
     normalized = status_text.casefold()
     closed_values = _tuple_setting(_setting_value(settings, "status_closed_values")) or ("closed", "kapalı")
@@ -244,6 +289,25 @@ def _extract_source_status(html: str, settings: Any) -> str:
     return ""
 
 
+_DEADLINE_LABELS = (
+    # English
+    "Closing date",
+    "Deadline",
+    "Application deadline",
+    "Call deadline",
+    "Submission deadline",
+    # Turkish
+    "Son Başvuru Tarihi",
+    "Son Başvuru",
+    "Başvuru Son Tarihi",
+    "Son Tarih",
+    "Bitiş Tarihi",
+    "Çağrı Kapanış Tarihi",
+    "Başvuru Tarihi",
+    "Son Katılım Tarihi",
+)
+
+
 def _extract_deadline_at(html: str, settings: Any) -> datetime | None:
     configured_deadline = _first_regex_match(html, _tuple_setting(_setting_value(settings, "deadline_regex_patterns")))
     if configured_deadline:
@@ -251,8 +315,8 @@ def _extract_deadline_at(html: str, settings: Any) -> datetime | None:
         if parsed_configured_deadline is not None:
             return parsed_configured_deadline
     deadline_value = _first_non_empty(
-        _time_datetime_after_label(html, ("Closing date", "Deadline", "Application deadline", "Call deadline")),
-        _field_text_after_label(html, ("Closing date", "Deadline", "Application deadline", "Call deadline")),
+        _time_datetime_after_label(html, _DEADLINE_LABELS),
+        _field_text_after_label(html, _DEADLINE_LABELS),
         _time_datetime_after_class(html, "field-award-deadline"),
     )
     return _parse_utc_date(deadline_value)

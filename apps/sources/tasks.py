@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import hashlib
+import logging
 from urllib.parse import urlparse
 
 from automation.adapters.contracts import CrawlContext, DiscoveredItem, FetchResult, SourceAdapter
-from automation.adapters.registry import get_adapter
+from automation.adapters.registry import AdapterNotRegisteredLookupError, get_adapter
 from automation.http.client import SafeHttpRequest, fetch_url_with_retries
 from automation.pipeline.persistence import persist_parsed_call
 from automation.pipeline.validation import is_portal_source_category
@@ -16,6 +17,8 @@ from apps.sources.locks import CrawlLock
 from apps.sources.models import Source
 from apps.sources.scheduler import due_sources, scheduler_can_run, scheduler_max_due_sources
 from celery import shared_task
+
+logger = logging.getLogger(__name__)
 
 
 @shared_task(name="sources.schedule_due_sources")
@@ -33,6 +36,13 @@ def schedule_due_sources() -> int:
 @shared_task(name="sources.crawl_source")
 def crawl_source(source_id: int) -> str:
     source = Source.objects.get(id=source_id)
+
+    try:
+        get_adapter(source.adapter_key)
+    except AdapterNotRegisteredLookupError:
+        logger.warning("No adapter registered for %s (source_id=%s), skipping.", source.adapter_key, source_id)
+        return f"unsupported_adapter:{source.adapter_key}"
+
     lock = CrawlLock(source_id=source.id)
     if not lock.acquire():
         return "locked"
@@ -75,14 +85,22 @@ def _crawl_source(source: Source, run: CrawlRun) -> int:
     persisted_count = 0
 
     for item in adapter.discover(context):
-        persisted_count += _process_discovered_item(
-            adapter=adapter,
-            context=context,
-            source=source,
-            run=run,
-            item=item,
-            allow_detail_discovery=True,
-        )
+        try:
+            persisted_count += _process_discovered_item(
+                adapter=adapter,
+                context=context,
+                source=source,
+                run=run,
+                item=item,
+                allow_detail_discovery=True,
+            )
+        except Exception:
+            # Item failure already recorded in CrawlItem; continue with remaining items.
+            logger.exception(
+                "Item failed during crawl (source=%s url=%s), continuing.",
+                source.source_key,
+                item.normalized_url,
+            )
 
     return persisted_count
 
@@ -176,7 +194,7 @@ def _process_discovered_item(
         crawl_item.error_code = exc.__class__.__name__
         crawl_item.save(update_fields=["status", "error_code", "updated_at"])
         run.failed_count += 1
-        raise
+        raise  # re-raise so _crawl_source can log and continue with next item
 
 
 def _discover_detail_items(
