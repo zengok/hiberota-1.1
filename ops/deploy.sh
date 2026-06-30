@@ -8,13 +8,15 @@ set -eu
 REMOTE_USER="root"
 REMOTE_HOST="70.40.138.74"
 REMOTE_DIR="/var/www/hiberota"
-SSH_KEY="${SSH_KEY:-$HOME/.ssh/id_rsa}"
+SSH_KEY="${SSH_KEY:-$HOME/.ssh/hiberota_deploy_ed25519}"
 
 LOCAL_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
 echo "==> Kodlar sunucuya gönderiliyor: ${REMOTE_HOST}:${REMOTE_DIR}"
 rsync -avz --delete \
   --exclude '.venv' \
+  --exclude '.git' \
+  --exclude '.github' \
   --exclude '__pycache__' \
   --exclude '.pytest_cache' \
   --exclude '.mypy_cache' \
@@ -72,5 +74,5 @@ ssh -i "${SSH_KEY}" "${REMOTE_USER}@${REMOTE_HOST}" "
 
 echo ""
 echo "✅ Deploy tamamlandı!"
-echo "   Site: https://www.hiberota.com"
+echo "   Site: https://hiberota.com"
 echo "   Scheduler 5 dakika içinde ilk crawl'ı başlatacak."
