@@ -6,6 +6,7 @@ from unittest.mock import Mock, patch
 from automation.http.client import SafeHttpResponse
 from django.core.cache import cache
 from django.test import TestCase
+from django.test.utils import override_settings
 
 from apps.calls.models import GrantCall
 from apps.ingestion.models import CrawlItem, CrawlRun
@@ -73,8 +74,9 @@ class SourceCrawlTaskTests(TestCase):
         fetch_url.assert_called_once()
         self.assertEqual(result, "persisted:0")
         self.source.refresh_from_db()
-        self.assertIsNotNone(self.source.last_success_at)
-        self.assertEqual(self.source.consecutive_failures, 0)
+        self.assertIsNone(self.source.last_success_at)
+        self.assertIsNotNone(self.source.last_failure_at)
+        self.assertEqual(self.source.consecutive_failures, 1)
         self.assertEqual(GrantCall.objects.count(), 0)
         run = CrawlRun.objects.get()
         item = CrawlItem.objects.get()
@@ -82,6 +84,20 @@ class SourceCrawlTaskTests(TestCase):
         self.assertEqual(run.failed_count, 1)
         self.assertEqual(run.error_code, "")
         self.assertEqual(item.status, CrawlItem.Status.FAILED)
+
+    @override_settings(SOURCE_SCHEDULER_DEGRADE_AFTER_FAILURES=3)
+    @patch("apps.sources.tasks.fetch_url_with_retries", side_effect=RuntimeError("network failed"))
+    def test_crawl_source_degrades_source_after_failure_threshold(self, fetch_url: Mock) -> None:
+        self.source.consecutive_failures = 2
+        self.source.save(update_fields=["consecutive_failures", "updated_at"])
+
+        result = crawl_source(self.source.id)
+
+        fetch_url.assert_called_once()
+        self.assertEqual(result, "persisted:0")
+        self.source.refresh_from_db()
+        self.assertEqual(self.source.consecutive_failures, 3)
+        self.assertEqual(self.source.status, Source.Status.DEGRADED)
 
     def test_safe_http_request_uses_source_config_and_host_allowlist(self) -> None:
         self.source.config_json = {

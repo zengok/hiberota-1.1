@@ -47,6 +47,16 @@ class SchedulerTests(TestCase):
 
         self.assertEqual(due_sources(), [source])
 
+    def test_due_sources_exclude_recently_failed_source(self) -> None:
+        self.create_source(last_failure_at=timezone.now(), crawl_interval_minutes=60)
+
+        self.assertEqual(due_sources(), [])
+
+    def test_due_sources_include_old_failed_source(self) -> None:
+        source = self.create_source(last_failure_at=timezone.now() - timedelta(hours=2), crawl_interval_minutes=60)
+
+        self.assertEqual(due_sources(), [source])
+
     @override_settings(SOURCE_SCHEDULER_ALLOWLIST=("source-b",))
     def test_due_sources_apply_scheduler_allowlist(self) -> None:
         self.create_source(source_key="source-a", name="Source A")

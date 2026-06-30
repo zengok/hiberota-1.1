@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.utils import timezone
@@ -14,12 +14,7 @@ def due_sources() -> list[Source]:
     allowlist = _scheduler_allowlist()
     if allowlist:
         sources = sources.filter(source_key__in=allowlist)
-    return [
-        source
-        for source in sources
-        if source.last_success_at is None
-        or source.last_success_at <= now - timedelta(minutes=source.crawl_interval_minutes)
-    ]
+    return [source for source in sources if _source_is_due(source=source, now=now)]
 
 
 def scheduler_can_run() -> bool:
@@ -40,3 +35,10 @@ def _scheduler_allowlist() -> tuple[str, ...]:
     if isinstance(configured, str):
         return tuple(item.strip() for item in configured.split(",") if item.strip())
     return tuple(str(item).strip() for item in configured if str(item).strip())
+
+
+def _source_is_due(*, source: Source, now: datetime) -> bool:
+    interval = timedelta(minutes=source.crawl_interval_minutes)
+    attempts = [item for item in (source.last_success_at, source.last_failure_at) if item is not None]
+    last_attempt_at = max(attempts) if attempts else None
+    return last_attempt_at is None or last_attempt_at <= now - interval

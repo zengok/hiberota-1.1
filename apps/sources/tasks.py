@@ -57,9 +57,7 @@ def crawl_source(source_id: int) -> str:
     try:
         persisted_count = _crawl_source(source, run)
         _finish_run(run, status=CrawlRun.Status.COMPLETED)
-        source.last_success_at = timezone.now()
-        source.consecutive_failures = 0
-        source.save(update_fields=["last_success_at", "consecutive_failures", "updated_at"])
+        _record_source_outcome(source=source, run=run)
         return f"persisted:{persisted_count}"
     except Exception as exc:
         run.error_code = exc.__class__.__name__
@@ -268,3 +266,27 @@ def _finish_run(run: CrawlRun, *, status: str) -> None:
             "updated_at",
         ]
     )
+
+
+def _record_source_outcome(*, source: Source, run: CrawlRun) -> None:
+    now = timezone.now()
+    if run.fetched_count > 0 or run.created_count > 0 or run.updated_count > 0:
+        source.last_success_at = now
+        source.consecutive_failures = 0
+        source.save(update_fields=["last_success_at", "consecutive_failures", "updated_at"])
+        return
+
+    if run.failed_count == 0:
+        source.last_success_at = now
+        source.consecutive_failures = 0
+        source.save(update_fields=["last_success_at", "consecutive_failures", "updated_at"])
+        return
+
+    source.last_failure_at = now
+    source.consecutive_failures += 1
+    update_fields = ["last_failure_at", "consecutive_failures", "updated_at"]
+    degrade_after = int(getattr(settings, "SOURCE_SCHEDULER_DEGRADE_AFTER_FAILURES", 3))
+    if source.consecutive_failures >= degrade_after and source.status == Source.Status.ACTIVE:
+        source.status = Source.Status.DEGRADED
+        update_fields.append("status")
+    source.save(update_fields=update_fields)
