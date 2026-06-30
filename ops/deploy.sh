@@ -44,21 +44,21 @@ ssh -i "${SSH_KEY}" "${REMOTE_USER}@${REMOTE_HOST}" "
   cd ${REMOTE_DIR}
 
   echo '--- .env scheduler ayarları düzeltiliyor ---'
-  sed -i 's/^SOURCE_SCHEDULER_ENABLED=.*/SOURCE_SCHEDULER_ENABLED=true/' .env
-  sed -i 's/^SOURCE_SCHEDULER_ROLLBACK_PAUSED=.*/SOURCE_SCHEDULER_ROLLBACK_PAUSED=false/' .env
-  sed -i 's/^SOURCE_SCHEDULER_REQUIRE_ALLOWLIST=.*/SOURCE_SCHEDULER_REQUIRE_ALLOWLIST=false/' .env
-  sed -i 's/^SOURCE_SCHEDULER_MAX_DUE_SOURCES=.*/SOURCE_SCHEDULER_MAX_DUE_SOURCES=10/' .env
-  sed -i 's/^SOURCE_SCHEDULER_DEGRADE_AFTER_FAILURES=.*/SOURCE_SCHEDULER_DEGRADE_AFTER_FAILURES=3/' .env
+  sudo sed -i 's/^SOURCE_SCHEDULER_ENABLED=.*/SOURCE_SCHEDULER_ENABLED=true/' .env
+  sudo sed -i 's/^SOURCE_SCHEDULER_ROLLBACK_PAUSED=.*/SOURCE_SCHEDULER_ROLLBACK_PAUSED=false/' .env
+  sudo sed -i 's/^SOURCE_SCHEDULER_REQUIRE_ALLOWLIST=.*/SOURCE_SCHEDULER_REQUIRE_ALLOWLIST=false/' .env
+  sudo sed -i 's/^SOURCE_SCHEDULER_MAX_DUE_SOURCES=.*/SOURCE_SCHEDULER_MAX_DUE_SOURCES=10/' .env
+  sudo sed -i 's/^SOURCE_SCHEDULER_DEGRADE_AFTER_FAILURES=.*/SOURCE_SCHEDULER_DEGRADE_AFTER_FAILURES=3/' .env
 
   # Eğer bu satırlar .env'de yoksa ekle
-  grep -q '^SOURCE_SCHEDULER_ENABLED=' .env || echo 'SOURCE_SCHEDULER_ENABLED=true' >> .env
-  grep -q '^SOURCE_SCHEDULER_ROLLBACK_PAUSED=' .env || echo 'SOURCE_SCHEDULER_ROLLBACK_PAUSED=false' >> .env
-  grep -q '^SOURCE_SCHEDULER_REQUIRE_ALLOWLIST=' .env || echo 'SOURCE_SCHEDULER_REQUIRE_ALLOWLIST=false' >> .env
-  grep -q '^SOURCE_SCHEDULER_MAX_DUE_SOURCES=' .env || echo 'SOURCE_SCHEDULER_MAX_DUE_SOURCES=10' >> .env
-  grep -q '^SOURCE_SCHEDULER_DEGRADE_AFTER_FAILURES=' .env || echo 'SOURCE_SCHEDULER_DEGRADE_AFTER_FAILURES=3' >> .env
+  sudo sh -c \"grep -q '^SOURCE_SCHEDULER_ENABLED=' .env || echo 'SOURCE_SCHEDULER_ENABLED=true' >> .env\"
+  sudo sh -c \"grep -q '^SOURCE_SCHEDULER_ROLLBACK_PAUSED=' .env || echo 'SOURCE_SCHEDULER_ROLLBACK_PAUSED=false' >> .env\"
+  sudo sh -c \"grep -q '^SOURCE_SCHEDULER_REQUIRE_ALLOWLIST=' .env || echo 'SOURCE_SCHEDULER_REQUIRE_ALLOWLIST=false' >> .env\"
+  sudo sh -c \"grep -q '^SOURCE_SCHEDULER_MAX_DUE_SOURCES=' .env || echo 'SOURCE_SCHEDULER_MAX_DUE_SOURCES=10' >> .env\"
+  sudo sh -c \"grep -q '^SOURCE_SCHEDULER_DEGRADE_AFTER_FAILURES=' .env || echo 'SOURCE_SCHEDULER_DEGRADE_AFTER_FAILURES=3' >> .env\"
 
   echo '--- Mevcut .env scheduler satırları ---'
-  grep 'SOURCE_SCHEDULER' .env
+  sudo grep 'SOURCE_SCHEDULER' .env
 
   echo '--- Docker image yeniden inşa ediliyor ---'
   sudo docker compose build --no-cache web celery_worker celery_beat
