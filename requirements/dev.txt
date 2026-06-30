@@ -1,6 +1,6 @@
 -r base.txt
 bandit[toml]>=1.7,<2
-django-stubs>=5.0,<6
+django-stubs>=6.0.6,<7
 mypy>=1.10,<2
 pip-audit>=2.7,<3
 pytest>=9.0.3,<10
