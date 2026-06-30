@@ -76,7 +76,7 @@ jobs:
       - name: Build application image
         run: docker build -t hiberota:ci .
       - name: Container vulnerability scan
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: hiberota:ci
           format: table
