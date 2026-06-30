@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from io import StringIO
 
-from django.core.management import call_command
+from django.core.management import CommandError, call_command
 from django.test import TestCase
 from django.utils import timezone
 
@@ -111,6 +111,46 @@ class ReviewQueueReportTests(TestCase):
         self.assertIn("- publish_candidate: 1", value)
         self.assertIn("Open climate fund", value)
         self.assertIn("only low-confidence review remains", value)
+
+    def test_reject_review_queue_category_dry_run_does_not_update(self) -> None:
+        call = self._create_review_call(
+            title="Applying for funding",
+            url="https://example.org/funding/applying",
+            deadline_at=None,
+            availability_status=GrantCall.AvailabilityStatus.UNKNOWN,
+            confidence_score=70,
+        )
+        ReviewItem.objects.create(grant_call=call, reason_code=ReviewItem.ReasonCode.LOW_CONFIDENCE)
+        output = StringIO()
+
+        call_command("reject_review_queue_category", "--category=guidance_page", stdout=output)
+
+        call.refresh_from_db()
+        self.assertEqual(call.workflow_status, GrantCall.WorkflowStatus.REVIEW)
+        self.assertIn("Matched 1 guidance_page review calls", output.getvalue())
+        self.assertIn("Dry run complete", output.getvalue())
+
+    def test_reject_review_queue_category_commit_rejects_safe_category(self) -> None:
+        call = self._create_review_call(
+            title="Applying for funding",
+            url="https://example.org/funding/applying",
+            deadline_at=None,
+            availability_status=GrantCall.AvailabilityStatus.UNKNOWN,
+            confidence_score=70,
+        )
+        review = ReviewItem.objects.create(grant_call=call, reason_code=ReviewItem.ReasonCode.LOW_CONFIDENCE)
+
+        call_command("reject_review_queue_category", "--category=guidance_page", "--commit", stdout=StringIO())
+
+        call.refresh_from_db()
+        review.refresh_from_db()
+        self.assertEqual(call.workflow_status, GrantCall.WorkflowStatus.REJECTED)
+        self.assertEqual(review.status, ReviewItem.Status.RESOLVED)
+        self.assertIn("guidance", review.resolution)
+
+    def test_reject_review_queue_category_refuses_manual_review_category(self) -> None:
+        with self.assertRaises(CommandError):
+            call_command("reject_review_queue_category", "--category=needs_manual_review", stdout=StringIO())
 
     def _create_review_call(
         self,
