@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from django.db.models import QuerySet
+from django.db.models import Count, Q, QuerySet
 from django.utils import timezone
 
 from apps.calls.models import GrantCall
-from apps.institutions.models import Institution
+from apps.institutions.models import Country, Institution
 
 HOME_CALL_LIMIT = 4
 HOME_INSTITUTION_LIMIT = 6
@@ -50,8 +50,20 @@ def get_homepage_context() -> dict[str, Any]:
     featured_institutions = (
         Institution.objects.filter(is_active=True, is_verified=True)
         .select_related("country")
+        .annotate(
+            open_call_count=Count(
+                "grant_calls",
+                filter=Q(
+                    grant_calls__workflow_status=GrantCall.WorkflowStatus.PUBLISHED,
+                    grant_calls__availability_status__in=live_statuses,
+                ),
+                distinct=True,
+            )
+        )
         .order_by("name")[:HOME_INSTITUTION_LIMIT]
     )
+    verified_institutions = Institution.objects.filter(is_active=True, is_verified=True)
+    verified_institution_country_ids = verified_institutions.values("country_id").distinct()
 
     return {
         "page_title": "HibeRota",
@@ -65,4 +77,13 @@ def get_homepage_context() -> dict[str, Any]:
         "recent_world_calls": recent_world_calls,
         "upcoming_deadlines": upcoming_deadlines,
         "featured_institutions": featured_institutions,
+        "total_calls_count": _format_count(base_calls.distinct().count()),
+        "total_institutions_count": _format_count(verified_institutions.count()),
+        "total_countries_count": _format_count(
+            Country.objects.filter(is_active=True, id__in=verified_institution_country_ids).count()
+        ),
     }
+
+
+def _format_count(value: int) -> str:
+    return f"{value:,}".replace(",", ".")

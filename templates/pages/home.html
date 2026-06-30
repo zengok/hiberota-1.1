@@ -21,9 +21,9 @@
           <button class="btn btn-primary" type="submit" style="border-radius:13px;padding:0 28px;font-weight:600;font-size:15px">Ara</button>
         </form>
         <div style="display:flex;gap:26px;margin-top:22px;font-size:13.5px;color:#586B61">
-          <span><strong style="color:#14211B;font-weight:700">{{ total_calls_count|default:"1.240" }}</strong> aktif çağrı</span>
-          <span><strong style="color:#14211B;font-weight:700">{{ total_institutions_count|default:"320" }}</strong> kurum</span>
-          <span><strong style="color:#14211B;font-weight:700">{{ total_countries_count|default:"48" }}</strong> ülke</span>
+          <span><strong style="color:#14211B;font-weight:700">{{ total_calls_count }}</strong> aktif çağrı</span>
+          <span><strong style="color:#14211B;font-weight:700">{{ total_institutions_count }}</strong> kurum</span>
+          <span><strong style="color:#14211B;font-weight:700">{{ total_countries_count }}</strong> ülke</span>
         </div>
       </div>
       {% if hero_call %}
