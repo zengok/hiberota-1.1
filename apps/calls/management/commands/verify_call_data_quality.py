@@ -50,6 +50,16 @@ class Command(BaseCommand):
                 f"title={mismatch.title}"
             )
 
+        self.stdout.write(f"False-open candidates: {len(report.false_open_candidates)}")
+        for candidate in report.false_open_candidates:
+            self.stdout.write(
+                "false-open "
+                f"call_id={candidate.call_id} "
+                f"source_key={candidate.source_key} "
+                f"title={candidate.title} "
+                f"reason={candidate.reason}"
+            )
+
         if report.checked_calls == 0 and options["require_checked"]:
             raise CommandError("Call data quality verification did not check any calls.")
 

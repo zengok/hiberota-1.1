@@ -87,6 +87,61 @@ class CallDataQualityReportTests(TestCase):
         self.assertEqual(report.availability_mismatches[0].call_id, call.id)
         self.assertEqual(report.availability_mismatches[0].expected_status, GrantCall.AvailabilityStatus.CLOSED)
 
+    def test_report_flags_false_open_historical_calls(self) -> None:
+        call = self._create_call(
+            title="2025 - Fizibilite Desteği Programı",
+            source=self.source,
+            official_url="https://example.org/archive/2025-fzd",
+            canonical_source_url="https://example.org/archive/2025-fzd",
+            deadline_at=None,
+            availability_status=GrantCall.AvailabilityStatus.OPEN,
+        )
+
+        report = build_call_data_quality_report(now=self.now)
+
+        self.assertEqual(len(report.false_open_candidates), 1)
+        self.assertEqual(report.false_open_candidates[0].call_id, call.id)
+        self.assertIn("title year 2025", report.false_open_candidates[0].reason)
+
+    def test_report_does_not_flag_current_year_open_call_without_deadline(self) -> None:
+        self._create_call(
+            title=f"{self.now.year} - Teknik Destek Programı",
+            source=self.source,
+            official_url="https://example.org/current-technical-support",
+            canonical_source_url="https://example.org/current-technical-support",
+            deadline_at=None,
+            availability_status=GrantCall.AvailabilityStatus.OPEN,
+        )
+
+        report = build_call_data_quality_report(now=self.now)
+
+        self.assertEqual(report.false_open_candidates, ())
+
+    def test_quarantine_false_open_calls_commit_moves_candidates_to_review(self) -> None:
+        call = self._create_call(
+            title="Kapanan Destek Programları",
+            source=self.source,
+            official_url="https://example.org/closed-programs",
+            canonical_source_url="https://example.org/closed-programs",
+            deadline_at=None,
+            availability_status=GrantCall.AvailabilityStatus.OPEN,
+        )
+
+        output = StringIO()
+        call_command("quarantine_false_open_calls", "--commit", stdout=output)
+
+        call.refresh_from_db()
+        self.assertEqual(call.workflow_status, GrantCall.WorkflowStatus.REVIEW)
+        self.assertEqual(call.availability_status, GrantCall.AvailabilityStatus.UNKNOWN)
+        self.assertTrue(
+            ReviewItem.objects.filter(
+                grant_call=call,
+                reason_code=ReviewItem.ReasonCode.MISSING_REQUIRED_FIELD,
+                status=ReviewItem.Status.OPEN,
+            ).exists()
+        )
+        self.assertIn("Quarantined calls: 1", output.getvalue())
+
     def test_management_command_can_fail_on_issues(self) -> None:
         self._create_call(
             title="Closed call",
