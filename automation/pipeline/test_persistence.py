@@ -261,6 +261,29 @@ class ParsedCallPersistenceTests(TestCase):
         self.assertEqual(result.grant_call.workflow_status, GrantCall.WorkflowStatus.REVIEW)
         self.assertGreater(ReviewItem.objects.filter(grant_call=result.grant_call).count(), 0)
 
+    def test_missing_dates_create_low_confidence_review_not_deadline_conflict(self) -> None:
+        result = persist_parsed_call(
+            source=self.source,
+            parsed_call=self._parsed_call(include_deadline=False),
+            fetched_at=self.fetched_at,
+            content_hash="hash-missing-dates",
+            parser_version="parser-1",
+        )
+
+        self.assertTrue(result.review_created)
+        self.assertTrue(
+            ReviewItem.objects.filter(
+                grant_call=result.grant_call,
+                reason_code=ReviewItem.ReasonCode.LOW_CONFIDENCE,
+            ).exists()
+        )
+        self.assertFalse(
+            ReviewItem.objects.filter(
+                grant_call=result.grant_call,
+                reason_code=ReviewItem.ReasonCode.DEADLINE_CONFLICT,
+            ).exists()
+        )
+
     def test_missing_official_url_blocks_auto_publish_even_when_score_is_high(self) -> None:
         result = persist_parsed_call(
             source=self.source,

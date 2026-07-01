@@ -152,6 +152,46 @@ class ReviewQueueReportTests(TestCase):
         with self.assertRaises(CommandError):
             call_command("reject_review_queue_category", "--category=needs_manual_review", stdout=StringIO())
 
+    def test_normalize_review_reason_codes_resolves_only_false_deadline_conflicts(self) -> None:
+        false_conflict = self._create_review_call(
+            title="Missing date review",
+            url="https://example.org/funding/missing-date",
+            deadline_at=None,
+            availability_status=GrantCall.AvailabilityStatus.UNKNOWN,
+            confidence_score=70,
+        )
+        false_review = ReviewItem.objects.create(
+            grant_call=false_conflict,
+            reason_code=ReviewItem.ReasonCode.DEADLINE_CONFLICT,
+        )
+        real_conflict = self._create_review_call(
+            title="Real date conflict",
+            url="https://example.org/funding/real-conflict",
+            deadline_at=self.now + timedelta(days=1),
+            availability_status=GrantCall.AvailabilityStatus.OPEN,
+            confidence_score=90,
+        )
+        real_conflict.application_open_at = self.now + timedelta(days=10)
+        real_conflict.save(update_fields=["application_open_at", "updated_at"])
+        real_review = ReviewItem.objects.create(
+            grant_call=real_conflict,
+            reason_code=ReviewItem.ReasonCode.DEADLINE_CONFLICT,
+        )
+
+        call_command("normalize_review_reason_codes", "--commit", stdout=StringIO())
+
+        false_review.refresh_from_db()
+        real_review.refresh_from_db()
+        self.assertEqual(false_review.status, ReviewItem.Status.RESOLVED)
+        self.assertEqual(real_review.status, ReviewItem.Status.OPEN)
+        self.assertTrue(
+            ReviewItem.objects.filter(
+                grant_call=false_conflict,
+                reason_code=ReviewItem.ReasonCode.LOW_CONFIDENCE,
+                status=ReviewItem.Status.OPEN,
+            ).exists()
+        )
+
     def _create_review_call(
         self,
         *,

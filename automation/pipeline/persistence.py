@@ -298,8 +298,6 @@ def _sync_review_items(
 
 
 def _review_reason_for(reason: str) -> str:
-    if reason == "missing_dates":
-        return ReviewItem.ReasonCode.DEADLINE_CONFLICT
     if reason in {"missing_title", "missing_official_url"}:
         return ReviewItem.ReasonCode.MISSING_REQUIRED_FIELD
     return ReviewItem.ReasonCode.LOW_CONFIDENCE
