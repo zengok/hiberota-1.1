@@ -174,6 +174,37 @@ class ParsedCallPersistenceTests(TestCase):
         self.assertEqual(set(call.audiences.values_list("key", flat=True)), {"researcher"})
         self.assertFalse(closed_call.audiences.exists())
 
+    def test_audience_gap_report_explains_unresolved_open_calls(self) -> None:
+        GrantCall.objects.create(
+            title="Genel destek duyurusu",
+            slug="genel-destek-duyurusu",
+            source=self.source,
+            institution=self.institution,
+            official_url="https://example.org/general",
+            canonical_source_url="https://example.org/general",
+            fingerprint="general-call",
+            summary="Başvuru detayları resmi kaynakta paylaşılmıştır.",
+            deadline_at=self.fetched_at + timedelta(days=30),
+            first_seen_at=self.fetched_at,
+            workflow_status=GrantCall.WorkflowStatus.PUBLISHED,
+            availability_status=GrantCall.AvailabilityStatus.OPEN,
+        )
+
+        out = StringIO()
+        call_command(
+            "report_call_audience_gaps",
+            "--workflow-status",
+            "published",
+            "--availability-status",
+            "open",
+            stdout=out,
+        )
+
+        output = out.getvalue()
+        self.assertIn("Audience gap summary", output)
+        self.assertIn("missing_eligibility_text: 1", output)
+        self.assertIn("Genel destek duyurusu", output)
+
     def test_preserves_published_call_when_recrawl_only_loses_deadline(self) -> None:
         first_result = persist_parsed_call(
             source=self.source,
