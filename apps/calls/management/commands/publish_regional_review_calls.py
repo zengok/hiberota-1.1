@@ -4,7 +4,7 @@ from typing import Any
 
 from django.core.management.base import BaseCommand, CommandError, CommandParser
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Exists, OuterRef, Q
 from django.utils import timezone
 
 from apps.calls.models import GrantCall
@@ -89,16 +89,19 @@ def _candidate_queryset(*, region: str, min_confidence: int):
     if region in {"europe", "tr-europe"}:
         region_filter |= Q(source__institution__country__is_europe=True) | Q(source__institution__country__code="EU")
 
+    blocking_reviews = ReviewItem.objects.filter(
+        grant_call_id=OuterRef("pk"),
+        status__in=(ReviewItem.Status.OPEN, ReviewItem.Status.IN_PROGRESS),
+        reason_code__in=BLOCKING_REASONS,
+    )
     return (
         GrantCall.objects.filter(
             region_filter,
             workflow_status=GrantCall.WorkflowStatus.REVIEW,
             confidence_score__gte=min_confidence,
         )
-        .exclude(
-            review_items__status__in=(ReviewItem.Status.OPEN, ReviewItem.Status.IN_PROGRESS),
-            review_items__reason_code__in=BLOCKING_REASONS,
-        )
+        .annotate(has_blocking_review=Exists(blocking_reviews))
+        .filter(has_blocking_review=False)
         .select_related("source", "source__institution", "source__institution__country")
         .order_by("source__institution__country__code", "id")
         .distinct()
