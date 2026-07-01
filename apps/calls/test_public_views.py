@@ -251,6 +251,35 @@ class CallListViewTests(TestCase):
         self.assertContains(response, "Kapsam: Dünya")
         self.assertNotIn("Türkiye Programı", content)
 
+    def test_call_list_filters_by_multiple_audiences(self) -> None:
+        student = AudienceType.objects.create(key="student", name_tr="Öğrenci", name_en="Student")
+        sme = AudienceType.objects.create(key="sme", name_tr="KOBİ", name_en="SME")
+        self._create_call(
+            title="Öğrenci Programı",
+            slug="ogrenci-programi",
+            source=self.source,
+            institution=self.institution,
+            country=self.turkey,
+            audience=student,
+        )
+        self._create_call(
+            title="KOBİ Programı",
+            slug="kobi-programi",
+            source=self.world_source,
+            institution=self.world_institution,
+            country=self.france,
+            audience=sme,
+        )
+
+        response = Client().get("/cagrilar/", {"hedef": ["student", "sme"]})
+        content = response.content.decode()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Öğrenci Programı")
+        self.assertContains(response, "KOBİ Programı")
+        self.assertContains(response, "Hedef kitle: Öğrenci, KOBİ")
+        self.assertNotIn("2 sonuç bulunamadı", content)
+
     def test_call_list_mobile_filter_controls_are_accessible(self) -> None:
         response = Client().get("/cagrilar/", {"q": "bulunmayacak"})
         content = response.content.decode()

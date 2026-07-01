@@ -12,12 +12,42 @@ HOME_CALL_LIMIT = 4
 HOME_INSTITUTION_LIMIT = 6
 
 QUICK_START_CARDS = [
-    {"label": "Öğrenci", "href": "/ogrenciler-icin-hibeler/"},
-    {"label": "Akademisyen", "href": "/akademisyenler-icin-fonlar/"},
-    {"label": "Araştırmacı", "href": "/cagrilar/?hedef=arastirmaci"},
-    {"label": "Girişimci", "href": "/cagrilar/?hedef=girisimci"},
-    {"label": "KOBİ/Firma", "href": "/cagrilar/?hedef=kobi-firma"},
-    {"label": "Kurumsal/Kamu/STK", "href": "/cagrilar/?hedef=kurumsal-kamu-stk"},
+    {
+        "label": "Öğrenci",
+        "description": "Burs, araştırma ve gençlik destekleri",
+        "href": "/cagrilar/?hedef=student&hedef=graduate_student",
+        "icon": "student",
+    },
+    {
+        "label": "Akademisyen",
+        "description": "Üniversite ve bilimsel proje fonları",
+        "href": "/cagrilar/?hedef=academic",
+        "icon": "academic",
+    },
+    {
+        "label": "Araştırmacı",
+        "description": "Ar-Ge ve araştırma odaklı çağrılar",
+        "href": "/cagrilar/?hedef=researcher",
+        "icon": "researcher",
+    },
+    {
+        "label": "Girişimci",
+        "description": "Girişim ve startup destekleri",
+        "href": "/cagrilar/?hedef=entrepreneur&hedef=startup",
+        "icon": "entrepreneur",
+    },
+    {
+        "label": "KOBİ/Firma",
+        "description": "KOBİ ve şirketlere yönelik destekler",
+        "href": "/cagrilar/?hedef=sme&hedef=company",
+        "icon": "company",
+    },
+    {
+        "label": "Kurumsal/Kamu/STK",
+        "description": "Kamu, belediye, STK ve konsorsiyum çağrıları",
+        "href": "/cagrilar/?hedef=ngo&hedef=municipality&hedef=public_institution&hedef=consortium",
+        "icon": "institution",
+    },
 ]
 
 

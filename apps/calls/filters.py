@@ -31,6 +31,21 @@ STATUS_LABELS: dict[str, str] = {
     GrantCall.AvailabilityStatus.CLOSED: "Kapalı",
 }
 
+AUDIENCE_LABELS: dict[str, str] = {
+    "student": "Öğrenci",
+    "graduate_student": "Lisansüstü Öğrenci",
+    "academic": "Akademisyen",
+    "researcher": "Araştırmacı",
+    "entrepreneur": "Girişimci",
+    "startup": "Girişim",
+    "sme": "KOBİ",
+    "company": "Şirket",
+    "ngo": "STK",
+    "municipality": "Belediye",
+    "public_institution": "Kamu Kurumu",
+    "consortium": "Konsorsiyum",
+}
+
 STATUS_SORT_ORDER = Case(
     When(availability_status=GrantCall.AvailabilityStatus.CLOSING_SOON, then=Value(0)),
     When(availability_status=GrantCall.AvailabilityStatus.OPEN, then=Value(1)),
@@ -126,8 +141,9 @@ def apply_call_filters(calls: QuerySet[GrantCall], params: QueryDict) -> QuerySe
     if institution_slug := params.get("kurum"):
         calls = calls.filter(institution__slug=institution_slug)
 
-    if audience_key := params.get("hedef"):
-        calls = calls.filter(audiences__key=audience_key)
+    audience_keys = [value.strip() for value in params.getlist("hedef") if value.strip()]
+    if audience_keys:
+        calls = calls.filter(audiences__key__in=audience_keys)
 
     if sector_key := params.get("sektor"):
         calls = calls.filter(sectors__key=sector_key)
@@ -197,6 +213,19 @@ def build_filter_options(params: QueryDict) -> dict[str, Any]:
 def build_active_filters(params: QueryDict) -> list[ActiveFilter]:
     active_filters = []
     for key, label in FILTER_LABELS.items():
+        if key == "hedef":
+            values = [value.strip() for value in params.getlist(key) if value.strip()]
+            if not values:
+                continue
+            active_filters.append(
+                ActiveFilter(
+                    key=key,
+                    label=label,
+                    value=", ".join(_display_filter_value(key, value) for value in values),
+                    remove_url=_replace_query(params, {}, remove=[key, "sayfa"]),
+                )
+            )
+            continue
         value = params.get(key, "").strip()
         if not value or key == "siralama" and value == "yeni":
             continue
@@ -234,6 +263,8 @@ def _display_filter_value(key: str, value: str) -> str:
         return "Avrupa"
     if key == "kapsam" and value == "dunya":
         return "Dünya"
+    if key == "hedef":
+        return AUDIENCE_LABELS.get(value, value)
     return value
 
 

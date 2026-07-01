@@ -57,34 +57,27 @@
   <section style="padding:46px 40px 6px;max-width:1200px;margin:0 auto">
     <h2 style="margin:0 0 18px;font-size:12.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8AA197">Hızlı başlangıç</h2>
     <div class="quick-start-grid">
-      <a class="quick-start-card" href="/cagrilar/?ulke=TR">
-        <span class="quick-start-card__icon" style="background:#E3F4EA;color:#15875C">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
-        </span>
-        <span style="font-size:15px;font-weight:700;color:#14211B">Türkiye çağrıları</span>
-        <span style="font-size:13px;color:#586B61;line-height:1.4">Yurt içi kurumların açık çağrıları</span>
-      </a>
-      <a class="quick-start-card" href="/cagrilar/?kapsam=dunya">
-        <span class="quick-start-card__icon" style="background:#E3F4EA;color:#15875C">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 4 5.7 4 9s-1.5 6.5-4 9c-2.5-2.5-4-5.7-4-9s1.5-6.5 4-9z"/></svg>
-        </span>
-        <span style="font-size:15px;font-weight:700;color:#14211B">Dünya çağrıları</span>
-        <span style="font-size:13px;color:#586B61;line-height:1.4">Uluslararası fon programları</span>
-      </a>
-      <a class="quick-start-card" href="/cagrilar/?siralama=son-tarih-yakin">
-        <span class="quick-start-card__icon" style="background:#FFF1E0;color:#B45309">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
-        </span>
-        <span style="font-size:15px;font-weight:700;color:#14211B">Yaklaşan son tarihler</span>
-        <span style="font-size:13px;color:#586B61;line-height:1.4">Kapanmak üzere olan çağrılar</span>
-      </a>
-      <a class="quick-start-card" href="{% url 'grant-survey' %}">
-        <span class="quick-start-card__icon" style="background:#E3F4EA;color:#15875C">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"/><path d="M20 12v7H4V5h11"/></svg>
-        </span>
-        <span style="font-size:15px;font-weight:700;color:#14211B">Hibe Anketi</span>
-        <span style="font-size:13px;color:#586B61;line-height:1.4">Profilinize uygun çağrıları bulun</span>
-      </a>
+      {% for card in quick_start_cards %}
+        <a class="quick-start-card" href="{{ card.href }}">
+          <span class="quick-start-card__icon" style="background:#E3F4EA;color:#15875C">
+            {% if card.icon == "student" %}
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10L12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c3 2 9 2 12 0v-5"/></svg>
+            {% elif card.icon == "academic" %}
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5V6a2 2 0 0 1 2-2h12v16H6a2 2 0 0 1-2-.5Z"/><path d="M8 8h7"/><path d="M8 12h6"/></svg>
+            {% elif card.icon == "researcher" %}
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v7l-5 9a3 3 0 0 0 2.6 4h8.8A3 3 0 0 0 19 18l-5-9V2"/><path d="M8 2h8"/><path d="M7 16h10"/></svg>
+            {% elif card.icon == "entrepreneur" %}
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c3 2 5 5 5 8 0 5-5 9-5 9s-5-4-5-9c0-3 2-6 5-8Z"/><path d="M9 21h6"/><path d="M12 8v4"/></svg>
+            {% elif card.icon == "company" %}
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M13 9h6v12"/><path d="M8 10h1"/><path d="M8 14h1"/><path d="M16 13h1"/></svg>
+            {% else %}
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M4 21V8l8-5 8 5v13"/><path d="M9 21v-7h6v7"/></svg>
+            {% endif %}
+          </span>
+          <span style="font-size:15px;font-weight:700;color:#14211B">{{ card.label }}</span>
+          <span style="font-size:13px;color:#586B61;line-height:1.4">{{ card.description }}</span>
+        </a>
+      {% endfor %}
     </div>
   </section>
 
