@@ -42,6 +42,7 @@ class EuFundingTendersAdapter:
                     metadata={
                         "kind": "detail",
                         "api_entry": entry,
+                        "parse_without_fetch": True,
                         "source_status": source_status,
                         "application_open_at": _first_value(metadata, "startDate"),
                         "deadline_at": _first_value(metadata, "deadlineDate"),

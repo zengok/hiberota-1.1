@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+from datetime import datetime
 from urllib.parse import urlparse
 from uuid import uuid4
 
@@ -124,6 +125,32 @@ def _process_discovered_item(
         raw_metadata_json=dict(item.metadata),
     )
     try:
+        if item.metadata.get("parse_without_fetch"):
+            fetched_at = timezone.now()
+            metadata_body = json.dumps(dict(item.metadata), sort_keys=True).encode()
+            content_hash = item.content_hash or hashlib.sha256(metadata_body).hexdigest()
+            fetch_result = FetchResult(
+                item=item,
+                final_url=item.normalized_url,
+                status_code=0,
+                content_type="application/json",
+                body_text=metadata_body.decode("utf-8"),
+                fetched_at=fetched_at,
+                content_hash=content_hash,
+                headers={},
+                evidence_excerpt=metadata_body[:500].decode("utf-8", errors="replace"),
+            )
+            persisted = _parse_and_persist_item(
+                adapter=adapter,
+                source=source,
+                crawl_item=crawl_item,
+                run=run,
+                fetch_result=fetch_result,
+                fetched_at=fetched_at,
+                content_hash=content_hash,
+            )
+            return 1 if persisted else 0
+
         response = fetch_url_with_retries(_safe_http_request_for(source=source, url=item.normalized_url))
         fetched_at = timezone.now()
         content_hash = item.content_hash or hashlib.sha256(response.body).hexdigest()
@@ -169,25 +196,15 @@ def _process_discovered_item(
             crawl_item.save(update_fields=["raw_metadata_json", "updated_at"])
             return 0
 
-        parsed_call = adapter.parse(fetch_result, context)
-        persisted = persist_parsed_call(
+        _parse_and_persist_item(
+            adapter=adapter,
             source=source,
-            parsed_call=parsed_call,
+            crawl_item=crawl_item,
+            run=run,
+            fetch_result=fetch_result,
             fetched_at=fetched_at,
             content_hash=content_hash,
-            parser_version=adapter.parser_version,
         )
-        crawl_item.status = CrawlItem.Status.PARSED if persisted.created else CrawlItem.Status.DUPLICATE
-        crawl_item.parser_version = adapter.parser_version
-        crawl_item.grant_call = persisted.grant_call
-        crawl_item.save(update_fields=["status", "parser_version", "grant_call", "updated_at"])
-        if persisted.created:
-            run.created_count += 1
-        else:
-            run.updated_count += 1
-            run.duplicate_count += 1
-        if persisted.review_created:
-            run.review_count += 1
         return 1
     except Exception as exc:
         crawl_item.status = CrawlItem.Status.FAILED
@@ -195,6 +212,49 @@ def _process_discovered_item(
         crawl_item.save(update_fields=["status", "error_code", "updated_at"])
         run.failed_count += 1
         raise  # re-raise so _crawl_source can log and continue with next item
+
+
+def _parse_and_persist_item(
+    *,
+    adapter: SourceAdapter,
+    source: Source,
+    crawl_item: CrawlItem,
+    run: CrawlRun,
+    fetch_result: FetchResult,
+    fetched_at: datetime,
+    content_hash: str,
+) -> bool:
+    parsed_call = adapter.parse(fetch_result, _context_for(source))
+    persisted = persist_parsed_call(
+        source=source,
+        parsed_call=parsed_call,
+        fetched_at=fetched_at,
+        content_hash=content_hash,
+        parser_version=adapter.parser_version,
+    )
+    crawl_item.status = CrawlItem.Status.PARSED if persisted.created else CrawlItem.Status.DUPLICATE
+    crawl_item.parser_version = adapter.parser_version
+    crawl_item.grant_call = persisted.grant_call
+    crawl_item.content_hash = content_hash
+    crawl_item.save(update_fields=["status", "parser_version", "grant_call", "content_hash", "updated_at"])
+    if persisted.created:
+        run.created_count += 1
+    else:
+        run.updated_count += 1
+        run.duplicate_count += 1
+    if persisted.review_created:
+        run.review_count += 1
+    return True
+
+
+def _context_for(source: Source) -> CrawlContext:
+    return CrawlContext(
+        source_key=source.source_key or str(source.id),
+        source_url=source.listing_url,
+        adapter_key=source.adapter_key,
+        config_version=source.config_version,
+        settings=source.config_json,
+    )
 
 
 def _discover_detail_items(

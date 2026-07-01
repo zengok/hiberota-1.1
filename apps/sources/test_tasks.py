@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -13,6 +14,7 @@ from apps.ingestion.models import CrawlItem, CrawlRun
 from apps.institutions.models import Country, Institution
 from apps.sources.models import Source
 from apps.sources.tasks import _safe_http_request_for, crawl_source
+from apps.taxonomy.models import AudienceType
 
 FIXTURES_DIR = Path(__file__).resolve().parents[2] / "automation" / "adapters" / "fixtures"
 
@@ -307,3 +309,97 @@ class SourceCrawlTaskTests(TestCase):
         item = CrawlItem.objects.get()
         self.assertEqual(item.status, CrawlItem.Status.PARSED)
         self.assertEqual(item.raw_metadata_json["kind"], "detail")
+
+    @patch("apps.sources.tasks.fetch_url_with_retries")
+    def test_metadata_only_detail_item_does_not_fetch_detail_url(self, fetch_url: Mock) -> None:
+        AudienceType.objects.create(key="researcher", name_tr="Araştırmacı", name_en="Researcher")
+        self.source.name = "Ufuk Avrupa Açık Horizon Europe Çağrıları"
+        self.source.listing_url = "https://api.tech.ec.europa.eu/search-api/prod/rest/search?apiKey=SEDIA"
+        self.source.source_type = Source.SourceType.API
+        self.source.adapter_key = "src-0022_eu_funding_v1"
+        self.source.config_json = {
+            "audience_hints": ["researcher"],
+            "country_codes_override": ["TR"],
+            "funding_scope": "Horizon Europe calls and Türkiye guidance",
+            "http_method": "POST",
+            "multipart_json_parts": {"query": {"bool": {"must": []}}, "languages": ["en"]},
+            "source_category": "open_call_api",
+        }
+        self.source.save(
+            update_fields=["name", "listing_url", "source_type", "adapter_key", "config_json", "updated_at"]
+        )
+        fetch_url.return_value = SafeHttpResponse(
+            final_url=self.source.listing_url,
+            status_code=200,
+            content_type="application/json",
+            body=json.dumps({"results": [self.eu_funding_entry()]}).encode(),
+            headers={"content-type": "application/json"},
+        )
+
+        result = crawl_source(self.source.id)
+
+        self.assertEqual(result, "persisted:1")
+        fetch_url.assert_called_once()
+        call = GrantCall.objects.get()
+        self.assertEqual(call.workflow_status, GrantCall.WorkflowStatus.PUBLISHED)
+        self.assertEqual(call.availability_status, GrantCall.AvailabilityStatus.OPEN)
+        self.assertEqual(call.external_id, "HORIZON-TEST-OPEN")
+        self.assertEqual(call.audiences.get().key, "researcher")
+        listing_item, detail_item = CrawlItem.objects.order_by("id")
+        self.assertEqual(listing_item.raw_metadata_json["detail_count"], 1)
+        self.assertEqual(detail_item.status, CrawlItem.Status.PARSED)
+        self.assertTrue(detail_item.raw_metadata_json["parse_without_fetch"])
+
+    def eu_funding_entry(self) -> dict[str, object]:
+        return {
+            "reference": "HORIZON-TEST-OPENTOPICSen",
+            "summary": "Open Horizon topic",
+            "url": (
+                "https://ec.europa.eu/info/funding-tenders/opportunities/portal/screen/opportunities/"
+                "topic-details/HORIZON-TEST-OPEN"
+            ),
+            "metadata": {
+                "identifier": ["HORIZON-TEST-OPEN"],
+                "title": ["Open Horizon topic"],
+                "url": [
+                    "https://ec.europa.eu/info/funding-tenders/opportunities/portal/screen/opportunities/"
+                    "topic-details/HORIZON-TEST-OPEN"
+                ],
+                "status": ["31094502"],
+                "sortStatus": ["1"],
+                "startDate": ["2026-05-05T00:00:00.000+0000"],
+                "deadlineDate": ["2026-09-15T00:00:00.000+0000"],
+                "callTitle": ["Clean Energy Test Call"],
+                "typesOfAction": ["HORIZON Research and Innovation Actions"],
+                "descriptionByte": ["<p>Expected Outcome:</p><p>Reliable public topic summary.</p>"],
+                "topicConditions": [
+                    "<h4>Eligible countries</h4><p>Eligible countries are described in Annex B.</p>"
+                ],
+                "actions": [
+                    json.dumps(
+                        [
+                            {
+                                "status": {"id": 31094502, "description": "Open"},
+                                "plannedOpeningDate": "2026-05-05",
+                                "deadlineDates": ["2026-09-15"],
+                            }
+                        ]
+                    )
+                ],
+                "budgetOverview": [
+                    json.dumps(
+                        {
+                            "budgetTopicActionMap": {
+                                "1": [
+                                    {
+                                        "minContribution": 1000000,
+                                        "maxContribution": 2000000,
+                                        "expectedGrants": 3,
+                                    }
+                                ]
+                            }
+                        }
+                    )
+                ],
+            },
+        }
