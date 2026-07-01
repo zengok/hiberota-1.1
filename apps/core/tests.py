@@ -108,7 +108,14 @@ class PublicLayoutTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'data-adsense-client-id="ca-pub-1234567890123456"')
-        self.assertNotIn("pagead2.googlesyndication.com", content)
+        self.assertEqual(
+            content.count(
+                "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1234567890123456"
+            ),
+            1,
+        )
+        self.assertContains(response, 'crossorigin="anonymous"')
+        self.assertContains(response, "data-adsense-script")
 
     @override_settings(
         GA4_MEASUREMENT_ID="G-2HHZH6D0QT",

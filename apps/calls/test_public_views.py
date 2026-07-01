@@ -177,13 +177,15 @@ class CallListViewTests(TestCase):
         )
 
         response = Client().get("/cagrilar/")
-        content = response.content.decode()
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'class="adsbygoogle"')
         self.assertContains(response, 'data-ad-client="ca-pub-1234567890123456"')
         self.assertContains(response, 'data-ad-slot="1111222233"')
-        self.assertNotIn("pagead2.googlesyndication.com/pagead/js/adsbygoogle.js", content)
+        self.assertContains(
+            response,
+            "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1234567890123456",
+        )
 
     def test_call_list_filters_by_query_country_audience_status_and_currency(self) -> None:
         self._create_call(
