@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from automation.adapters.contracts import SourceAdapter
+from automation.adapters.eu_funding import EuFundingTendersAdapter
 from automation.adapters.examples import AtomFeedAdapter, JsonApiAdapter, StaticHtmlAdapter
 
 
@@ -12,12 +13,14 @@ EXACT_ADAPTERS: dict[str, type[SourceAdapter]] = {
     JsonApiAdapter.key: JsonApiAdapter,
     AtomFeedAdapter.key: AtomFeedAdapter,
     StaticHtmlAdapter.key: StaticHtmlAdapter,
+    EuFundingTendersAdapter.key: EuFundingTendersAdapter,
 }
 
 SUFFIX_ADAPTERS: tuple[tuple[str, type[SourceAdapter]], ...] = (
     ("_api_v1", JsonApiAdapter),
     ("_feed_v1", AtomFeedAdapter),
     ("_html_v1", StaticHtmlAdapter),
+    ("_eu_funding_v1", EuFundingTendersAdapter),
 )
 
 

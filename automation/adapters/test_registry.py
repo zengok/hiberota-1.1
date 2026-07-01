@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from django.test import SimpleTestCase
 
+from automation.adapters.eu_funding import EuFundingTendersAdapter
 from automation.adapters.examples import AtomFeedAdapter, JsonApiAdapter, StaticHtmlAdapter
 from automation.adapters.registry import AdapterNotRegisteredLookupError, get_adapter
 
@@ -14,6 +15,7 @@ class AdapterRegistryTests(SimpleTestCase):
         self.assertIsInstance(get_adapter("src-0001_html_v1"), StaticHtmlAdapter)
         self.assertIsInstance(get_adapter("src-0002_feed_v1"), AtomFeedAdapter)
         self.assertIsInstance(get_adapter("src-0003_api_v1"), JsonApiAdapter)
+        self.assertIsInstance(get_adapter("src-0022_eu_funding_v1"), EuFundingTendersAdapter)
 
     def test_unknown_adapter_key_raises_clear_lookup_error(self) -> None:
         with self.assertRaises(AdapterNotRegisteredLookupError):

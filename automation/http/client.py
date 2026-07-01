@@ -28,6 +28,9 @@ class SafeHttpRequest:
     allowed_hosts: frozenset[str]
     user_agent: str
     contact_email: str
+    method: str = "GET"
+    body: bytes | None = None
+    extra_headers: Mapping[str, str] = field(default_factory=dict)
     timeout_seconds: float = 10
     max_redirects: int = 3
     max_response_bytes: int = 2_000_000
@@ -192,8 +195,12 @@ def _open_url(url: str, request: SafeHttpRequest) -> Any:
         "User-Agent": request.user_agent,
         "From": request.contact_email,
         "Accept": ", ".join(sorted(request.allowed_content_types)),
+        **request.extra_headers,
     }
-    urllib_request = Request(url, headers=headers, method="GET")
+    method = request.method.upper()
+    if method not in {"GET", "POST"}:
+        raise SafeHttpError("Only GET and POST methods are supported.")
+    urllib_request = Request(url, data=request.body, headers=headers, method=method)
     # URL is allowlisted and IP-validated before this call.
     return urlopen(urllib_request, timeout=request.timeout_seconds)  # nosec B310
 

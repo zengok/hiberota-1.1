@@ -141,6 +141,7 @@ Bu dosya kısa tutulmalıdır. Tamamlanan maddeler tarih ve PR numarasıyla işa
 - [x] Priority A kaynakları için fixture tabanlı parser testlerini ekle. (2026-06-30, PR yok: `src-0085` Eureka ve `src-0120` UKRI sanitize liste/detay fixture testleri eklendi; `www` host eşleşmesi, rehber/status filtreleri ve label-value status/deadline parse doğrulandı)
 - [x] Priority A kaynakları için production commit'siz controlled backfill dry-run planını doğrula. (2026-06-30, PR yok: `src-0085` ve `src-0120` active kaynakları 2 kaynaklık dry-run planında doğrulandı; `--commit` kullanılmadı)
 - [x] Priority A kaynakları için sınırlı production backfill ve review temizliğini tamamla. (2026-06-30, PR yok: `src-0120` ve `src-0085` commit'li backfill çalıştı; oluşan 10 rehber/filtre/program false-positive review kaydı rejected yapıldı, review queue ve kalite kontrol temiz)
+- [x] Ufuk Avrupa için portal linki yerine resmi EU Funding & Tenders API'sinden tekil açık/gelecek Horizon Europe çağrıları üreten adapter'ı doğrula. (2026-07-01, PR yok: `src-0022_eu_funding_v1` adapter, kontrollü POST/multipart fetch konfigürasyonu ve katalog satırı eklendi; canlı SEDIA API doğrulamasında 50 tekil çağrı, açık durum ve deadline parse edildi)
 
 ## ⚠️ IMPORTANT: Master Plan Uyumluluğu
 

@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import logging
 from urllib.parse import urlparse
+from uuid import uuid4
 
 from automation.adapters.contracts import CrawlContext, DiscoveredItem, FetchResult, SourceAdapter
 from automation.adapters.registry import AdapterNotRegisteredLookupError, get_adapter
@@ -228,17 +230,51 @@ def _allowed_hosts_for(source: Source) -> frozenset[str]:
 def _safe_http_request_for(*, source: Source, url: str) -> SafeHttpRequest:
     config = source.config_json if isinstance(source.config_json, dict) else {}
     robots_txt = config.get("robots_txt")
+    method = str(config.get("http_method") or "GET").upper()
+    body: bytes | None = None
+    extra_headers: dict[str, str] = {}
+    if method == "POST":
+        body, extra_headers = _post_body_from_config(config)
     return SafeHttpRequest(
         url=url,
         allowed_hosts=_allowed_hosts_for(source),
         user_agent=str(config.get("user_agent") or "HibeRotaBot/1.0"),
         contact_email=getattr(settings, "SECURITY_CONTACT_EMAIL", "security@example.invalid"),
+        method=method,
+        body=body,
+        extra_headers=extra_headers,
         timeout_seconds=float(config.get("timeout_seconds") or 10),
         max_redirects=int(config.get("max_redirects") or 3),
         max_response_bytes=int(config.get("max_response_bytes") or 2_000_000),
         min_request_interval_seconds=float(config.get("min_request_interval_seconds") or 1),
         robots_txt=robots_txt if isinstance(robots_txt, str) and robots_txt else None,
     )
+
+
+def _post_body_from_config(config: dict[str, object]) -> tuple[bytes | None, dict[str, str]]:
+    multipart_parts = config.get("multipart_json_parts")
+    if isinstance(multipart_parts, dict):
+        boundary = f"----HibeRotaBoundary{uuid4().hex}"
+        body = b"".join(
+            _multipart_json_part(boundary=boundary, name=str(name), value=value)
+            for name, value in multipart_parts.items()
+        )
+        body += f"--{boundary}--\r\n".encode()
+        return body, {"Content-Type": f"multipart/form-data; boundary={boundary}"}
+
+    json_body = config.get("json_body")
+    if isinstance(json_body, dict | list):
+        return json.dumps(json_body).encode(), {"Content-Type": "application/json"}
+
+    return None, {}
+
+
+def _multipart_json_part(*, boundary: str, name: str, value: object) -> bytes:
+    return (
+        f"--{boundary}\r\n"
+        f'Content-Disposition: form-data; name="{name}"; filename="blob"\r\n'
+        "Content-Type: application/json\r\n\r\n"
+    ).encode() + json.dumps(value).encode() + b"\r\n"
 
 
 def _increment_http_status(run: CrawlRun, status_code: int) -> None:

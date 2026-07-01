@@ -124,6 +124,26 @@ class SourceCrawlTaskTests(TestCase):
         self.assertEqual(request.max_response_bytes, 12345)
         self.assertEqual(request.min_request_interval_seconds, 2)
 
+    def test_safe_http_request_builds_multipart_post_from_source_config(self) -> None:
+        self.source.config_json = {
+            "http_method": "POST",
+            "multipart_json_parts": {
+                "query": {"bool": {"must": [{"term": {"programmePeriod": "2021 - 2027"}}]}},
+                "languages": ["en"],
+            },
+        }
+        self.source.save(update_fields=["config_json", "updated_at"])
+
+        request = _safe_http_request_for(source=self.source, url="https://example.org/search")
+
+        self.assertEqual(request.method, "POST")
+        self.assertIsNotNone(request.body)
+        self.assertIn("multipart/form-data; boundary=", request.extra_headers["Content-Type"])
+        body = (request.body or b"").decode()
+        self.assertIn('name="query"; filename="blob"', body)
+        self.assertIn('"programmePeriod": "2021 - 2027"', body)
+        self.assertIn('name="languages"; filename="blob"', body)
+
     @patch("apps.sources.tasks.fetch_url_with_retries")
     def test_crawl_source_passes_safe_http_request_to_retrying_client(self, fetch_url: Mock) -> None:
         self.source.config_json = {"max_response_bytes": 2048, "robots_txt": "User-agent: *\nAllow: /\n"}
