@@ -2,6 +2,23 @@
 <!doctype html>
 <html lang="tr">
 <head>
+  {% if ga4_measurement_id %}
+    <!-- Google tag (gtag.js) -->
+    <script nonce="{{ request.csp_nonce }}" async src="https://www.googletagmanager.com/gtag/js?id={{ ga4_measurement_id|urlencode }}" data-ga4-script></script>
+    <script nonce="{{ request.csp_nonce }}">
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag("consent", "default", {
+        analytics_storage: "denied",
+        ad_storage: "denied",
+        ad_user_data: "denied",
+        ad_personalization: "denied",
+        wait_for_update: 500
+      });
+      gtag("js", new Date());
+      gtag("config", "{{ ga4_measurement_id }}");
+    </script>
+  {% endif %}
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}{{ page_title|default:"HibeRota" }}{% endblock %}</title>
@@ -38,19 +55,6 @@
   <link rel="stylesheet" href="{% static 'css/site.css' %}">
   {% if structured_data_json %}
     <script nonce="{{ request.csp_nonce }}" type="application/ld+json">{{ structured_data_json|safe }}</script>
-  {% endif %}
-  {% if ga4_measurement_id %}
-    <script nonce="{{ request.csp_nonce }}">
-      window.dataLayer = window.dataLayer || [];
-      window.gtag = window.gtag || function gtag(){ window.dataLayer.push(arguments); };
-      window.gtag("consent", "default", {
-        analytics_storage: "denied",
-        ad_storage: "denied",
-        ad_user_data: "denied",
-        ad_personalization: "denied",
-        wait_for_update: 500
-      });
-    </script>
   {% endif %}
   {% if cmp_script_url %}
     <script nonce="{{ request.csp_nonce }}" async src="{{ cmp_script_url }}" data-cmp-provider="{{ cmp_provider_name }}"></script>

@@ -83,17 +83,18 @@ class PublicLayoutTests(TestCase):
         self.assertNotIn("/static/js/analytics_consent.js", content)
 
     @override_settings(GA4_MEASUREMENT_ID="G-2HHZH6D0QT")
-    def test_homepage_renders_consent_controls_without_loading_ga4_script(self) -> None:
+    def test_homepage_renders_single_ga4_tag_and_consent_controls(self) -> None:
         response = Client().get("/")
         content = response.content.decode()
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'window.gtag("consent", "default"')
+        self.assertEqual(content.count("googletagmanager.com/gtag/js?id=G-2HHZH6D0QT"), 1)
+        self.assertContains(response, 'gtag("consent", "default"')
+        self.assertContains(response, 'gtag("config", "G-2HHZH6D0QT")')
         self.assertContains(response, 'data-analytics-consent data-ga4-measurement-id="G-2HHZH6D0QT"')
         self.assertContains(response, "/static/js/analytics_consent.js")
         self.assertContains(response, 'data-cmp-enabled="false"')
         self.assertContains(response, 'data-adsense-client-id=""')
-        self.assertNotIn("googletagmanager.com/gtag/js", content)
         self.assertNotIn("pagead2.googlesyndication.com", content)
 
     @override_settings(
@@ -120,12 +121,12 @@ class PublicLayoutTests(TestCase):
         content = response.content.decode()
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'window.gtag("consent", "default"')
+        self.assertContains(response, 'gtag("consent", "default"')
         self.assertContains(response, 'src="https://cmp.example.test/cmp.js"')
         self.assertContains(response, 'data-cmp-provider="Example Certified CMP"')
         self.assertContains(response, 'data-cmp-enabled="true"')
         self.assertNotIn("data-analytics-consent", content)
-        self.assertNotIn("googletagmanager.com/gtag/js", content)
+        self.assertEqual(content.count("googletagmanager.com/gtag/js?id=G-2HHZH6D0QT"), 1)
 
     @override_settings(
         GA4_MEASUREMENT_ID="G-2HHZH6D0QT",
