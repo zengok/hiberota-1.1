@@ -53,6 +53,20 @@
   max-width: 42rem;
 }
 
+@media (max-width: 359.98px) {
+  .institution-search-form {
+    flex-wrap: wrap;
+  }
+
+  .institution-search-form > div {
+    flex-basis: 100% !important;
+  }
+
+  .institution-search-form .btn {
+    min-height: 42px;
+  }
+}
+
 /* ----------------------------- REKLAM ALANI ----------------------------- */
 .ad-slot {
   align-items: center;
