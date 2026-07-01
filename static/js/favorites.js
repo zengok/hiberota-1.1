@@ -24,7 +24,18 @@
 
   const setButtonState = (button, isFavorite) => {
     button.setAttribute("aria-pressed", String(isFavorite));
-    button.textContent = isFavorite ? "Favoriden çıkar" : "Favori";
+    // Kart üzerindeki simge-butonlar (yer imi SVG'si) metinle EZİLMEMELİ;
+    // yalnızca erişilebilirlik etiketi güncellenir.
+    if (button.classList.contains("favorite-toggle")) {
+      button.setAttribute("aria-label", isFavorite ? "Favoriden çıkar" : "Favorilere ekle");
+      return;
+    }
+    const label = button.querySelector("[data-favorite-label]");
+    if (label) {
+      label.textContent = isFavorite ? "Favoriden çıkar" : "Favori";
+    } else {
+      button.textContent = isFavorite ? "Favoriden çıkar" : "Favori";
+    }
   };
 
   const updateFavoriteBadge = () => {

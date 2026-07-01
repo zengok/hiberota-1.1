@@ -463,3 +463,33 @@ a:hover{ color:var(--hr-green-hover); }
   .source-meta--boxed{ grid-template-columns:1fr; }
   .distribution-grid{ grid-template-columns:1fr; }
 }
+
+/* ===================================================================
+   DÜZELTMELER (Temmuz 2026)
+   =================================================================== */
+
+/* Bootstrap .container kullanan sayfaları (çağrı detayı, anket, bülten,
+   hata) diğer sayfalardaki 1200px tasarım ızgarasına hizalar. */
+@media (min-width:1200px){
+  .container{ max-width:1224px; }
+}
+
+/* Kart başlıkları: bağlantı görünümü yerine tasarımdaki koyu başlık */
+.call-card h3 a{ color:inherit; text-decoration:none; }
+.call-card h3 a:hover{ color:var(--hr-green); }
+
+/* Ana sayfa hero ızgarası: satır içi 2 sütun tanımını mobilde tek
+   sütuna indirir (inline stil ancak !important ile aşılabilir). */
+@media (max-width:991.98px){
+  .home-hero-grid{ grid-template-columns:1fr !important; gap:30px !important; }
+}
+@media (max-width:575.98px){
+  .home-hero-grid h1{ font-size:32px !important; }
+  main > section,
+  article > .page-intro,
+  article > section,
+  .site-footer{
+    padding-left:20px !important;
+    padding-right:20px !important;
+  }
+}
