@@ -6,6 +6,7 @@ from io import StringIO
 from django.core.management import CommandError, call_command
 from django.test import TestCase
 from django.utils import timezone
+from django.utils.text import slugify
 
 from apps.calls.models import GrantCall
 from apps.calls.review_queue import ReviewQueueCategory, build_review_queue_report
@@ -165,6 +166,30 @@ class ReviewQueueReportTests(TestCase):
         report = build_review_queue_report(now=self.now)
 
         self.assertEqual(report.entries[0].category, ReviewQueueCategory.GUIDANCE_PAGE)
+
+    def test_report_classifies_turkish_non_call_announcements_as_guidance(self) -> None:
+        titles = [
+            "İhale İlanları",
+            "Ana Sayfa",
+            "2026 Yılı Teknik Destek Programı Mart-Nisan Dönemi Değerlendirme Sonuçları",
+            "Proje Uygulama Dokümanları",
+        ]
+        for title in titles:
+            call = self._create_review_call(
+                title=title,
+                url=f"https://example.org/{slugify(title)}",
+                deadline_at=None,
+                availability_status=GrantCall.AvailabilityStatus.UNKNOWN,
+                confidence_score=70,
+            )
+            ReviewItem.objects.create(grant_call=call, reason_code=ReviewItem.ReasonCode.LOW_CONFIDENCE)
+
+        report = build_review_queue_report(now=self.now)
+
+        self.assertEqual(
+            {entry.call.title: entry.category for entry in report.entries},
+            {title: ReviewQueueCategory.GUIDANCE_PAGE for title in titles},
+        )
 
     def test_publish_regional_review_calls_publishes_safe_turkey_and_europe_candidates(self) -> None:
         europe_country = Country.objects.create(code="DE", name_tr="Almanya", name_en="Germany", is_europe=True)
