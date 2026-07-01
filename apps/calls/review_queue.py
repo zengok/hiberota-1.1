@@ -75,6 +75,7 @@ GUIDANCE_KEYWORDS = (
     "başvuru sonuç",
     "bölge planı",
     "çalışma program",
+    "orta vadeli program",
     "policy",
     "procedure",
     "resources",
@@ -85,11 +86,6 @@ GUIDANCE_KEYWORDS = (
     "sıkça sorulan",
     "terms",
     "sss",
-    "duyurular",
-    "destek ve duyurular",
-    "destekler",
-    "destek programları",
-    "destek türleri",
     "desteklenmiş proje",
     "haber / duyuru",
     "haberler",
@@ -97,6 +93,7 @@ GUIDANCE_KEYWORDS = (
     "içerikler",
     "imzalandı",
     "imzalar atıldı",
+    "ilanına çıkıldı",
     "kays kılavuzu",
     "kurumsal",
     "personel al",
@@ -111,6 +108,43 @@ GUIDANCE_KEYWORDS = (
     "tamamlandı",
     "yatırım destek ofis",
 )
+
+EXACT_GUIDANCE_TITLES = {
+    "ana sayfa",
+    "arama",
+    "başarılı projeler",
+    "başvuru bilgileri",
+    "başvuru çağrı ilanları",
+    "başvuru çağrı rehberleri",
+    "çalışma programları",
+    "destek araçlarımız",
+    "destek istatistikleri",
+    "destek programları",
+    "destek programları arşivi",
+    "destek türleri",
+    "destek ve duyurular",
+    "destekler",
+    "diğer kurumların destek programları",
+    "doküman merkezi",
+    "duyurular",
+    "haber / duyuru",
+    "haberler",
+    "ihale ilanları",
+    "içerikler",
+    "krediler",
+    "kurumsal",
+    "mali destek projeleri",
+    "orta vadeli programlar",
+    "proje hazırlama eğitim talepleri",
+    "proje ihaleleri",
+    "proje uygulama",
+    "proje uygulama süreci",
+    "projeler veri tabanı",
+    "tamamlanan projeler arşivi",
+    "teknik destek projeleri",
+    "yatırım destek",
+    "yatırım destek ofisleri",
+}
 
 PUBLISHABLE_STATUSES = (
     GrantCall.AvailabilityStatus.OPEN,
@@ -217,6 +251,9 @@ def _closed_reason(*, call: GrantCall, now: datetime, source_status: str) -> str
 
 
 def _looks_like_guidance_page(call: GrantCall) -> bool:
+    title = call.title.casefold().strip()
+    if title in EXACT_GUIDANCE_TITLES:
+        return True
     haystack = " ".join(
         (
             call.title,
