@@ -16,6 +16,7 @@ from django.utils.text import slugify
 
 from automation.adapters.contracts import ParsedCall
 from automation.pipeline.confidence import calculate_confidence
+from automation.pipeline.taxonomy_rules import apply_taxonomy_rules
 from automation.pipeline.validation import ValidationIssue, validate_parsed_call
 
 AUDIENCE_KEY_ALIASES = {
@@ -49,6 +50,7 @@ def persist_parsed_call(
     parser_version: str,
 ) -> PersistedCall:
     """Persist one parsed call without bypassing duplicate, status, confidence, or evidence rules."""
+    parsed_call = apply_taxonomy_rules(source=source, parsed_call=parsed_call)
     now = timezone.now()
     observed_at = fetched_at or now
     confidence = calculate_confidence(parsed_call)
@@ -216,13 +218,13 @@ def _find_existing_call(*, source: Source, parsed_call: ParsedCall, fingerprint:
 
 def _sync_taxonomy(grant_call: GrantCall, parsed_call: ParsedCall) -> None:
     grant_call.countries.set(Country.objects.filter(code__in=parsed_call.country_codes))
-    grant_call.audiences.set(AudienceType.objects.filter(key__in=_resolve_audience_keys(parsed_call.audience_keys)))
+    grant_call.audiences.set(AudienceType.objects.filter(key__in=resolve_audience_keys(parsed_call.audience_keys)))
     grant_call.sectors.set(Sector.objects.filter(key__in=parsed_call.sector_keys))
     grant_call.themes.set(Theme.objects.filter(key__in=parsed_call.theme_keys))
     grant_call.program_types.set(ProgramType.objects.filter(key__in=parsed_call.program_type_keys))
 
 
-def _resolve_audience_keys(audience_keys: tuple[str, ...]) -> tuple[str, ...]:
+def resolve_audience_keys(audience_keys: tuple[str, ...]) -> tuple[str, ...]:
     candidate_keys = tuple(
         dict.fromkeys(alias for key in audience_keys for alias in AUDIENCE_KEY_ALIASES.get(key, (key,)))
     )

@@ -2,12 +2,14 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 from decimal import Decimal
+from io import StringIO
 
 from apps.calls.models import GrantCall
 from apps.ingestion.models import FieldEvidence, ReviewItem
 from apps.institutions.models import Country, Institution
 from apps.sources.models import Source
 from apps.taxonomy.models import AudienceType, ProgramType, Sector, Theme
+from django.core.management import call_command
 from django.test import TestCase
 from django.utils import timezone
 
@@ -19,6 +21,8 @@ class ParsedCallPersistenceTests(TestCase):
     def setUp(self) -> None:
         self.country = Country.objects.create(code="TR", name_tr="Turkiye", name_en="Turkey")
         self.audience = AudienceType.objects.create(key="sme", name_tr="KOBI", name_en="SME")
+        self.academic = AudienceType.objects.create(key="academic", name_tr="Akademisyen", name_en="Academic")
+        self.researcher = AudienceType.objects.create(key="researcher", name_tr="Araştırmacı", name_en="Researcher")
         self.sector = Sector.objects.create(key="energy", name_tr="Enerji", name_en="Energy")
         self.theme = Theme.objects.create(key="innovation", name_tr="Inovasyon", name_en="Innovation")
         self.program_type = ProgramType.objects.create(key="grant", name_tr="Hibe", name_en="Grant")
@@ -80,6 +84,71 @@ class ParsedCallPersistenceTests(TestCase):
         )
 
         self.assertEqual(list(result.grant_call.audiences.all()), [ngo])
+
+    def test_infers_missing_audience_from_call_text_before_persisting(self) -> None:
+        result = persist_parsed_call(
+            source=self.source,
+            parsed_call=self._parsed_call(
+                title="TÜBİTAK Kutup Araştırma Projeleri Çağrısı",
+                summary="Bilimsel araştırma projeleri desteklenecektir.",
+                eligibility_text="Araştırmacılar başvurabilir.",
+                audience_keys=(),
+            ),
+            fetched_at=self.fetched_at,
+            content_hash="hash-polar",
+            parser_version="parser-1",
+        )
+
+        self.assertEqual(
+            set(result.grant_call.audiences.values_list("key", flat=True)),
+            {"researcher"},
+        )
+        self.assertFalse(result.review_created)
+
+    def test_infers_missing_audience_from_source_catalog_hints(self) -> None:
+        self.source.config_json = {"audience_hints": ["academic", "researcher"]}
+        self.source.save(update_fields=["config_json", "updated_at"])
+
+        result = persist_parsed_call(
+            source=self.source,
+            parsed_call=self._parsed_call(
+                title="Genel araştırma desteği",
+                summary="Başvuru çağrısı.",
+                eligibility_text="Akademik proje ekipleri başvurabilir.",
+                audience_keys=(),
+            ),
+            fetched_at=self.fetched_at,
+            content_hash="hash-source-hints",
+            parser_version="parser-1",
+        )
+
+        self.assertEqual(
+            set(result.grant_call.audiences.values_list("key", flat=True)),
+            {"academic", "researcher"},
+        )
+
+    def test_backfill_command_updates_existing_calls_without_audiences(self) -> None:
+        call = GrantCall.objects.create(
+            title="TÜBİTAK Kutup Araştırma Projeleri Çağrısı",
+            slug="tubitak-kutup-arastirma-projeleri-cagrisi",
+            source=self.source,
+            institution=self.institution,
+            official_url="https://example.org/polar",
+            canonical_source_url="https://example.org/polar",
+            fingerprint="polar-call",
+            summary="Bilimsel araştırma projeleri desteklenecektir.",
+            eligibility_text="Araştırmacılar başvurabilir.",
+            deadline_at=self.fetched_at + timedelta(days=30),
+            first_seen_at=self.fetched_at,
+            workflow_status=GrantCall.WorkflowStatus.PUBLISHED,
+            availability_status=GrantCall.AvailabilityStatus.OPEN,
+        )
+
+        out = StringIO()
+        call_command("backfill_call_audiences", "--commit", "--workflow-status", "published", stdout=out)
+
+        self.assertIn("updated=1", out.getvalue())
+        self.assertEqual(set(call.audiences.values_list("key", flat=True)), {"researcher"})
 
     def test_preserves_published_call_when_recrawl_only_loses_deadline(self) -> None:
         first_result = persist_parsed_call(
@@ -384,6 +453,7 @@ class ParsedCallPersistenceTests(TestCase):
         self,
         *,
         summary: str = "Enerji yatırımı desteği",
+        eligibility_text: str = "KOBI'ler başvurabilir.",
         external_id: str = "external-1",
         title: str = "KOBI Enerji Hibe Programi",
         official_url: str = "https://example.org/call/1/apply",
@@ -405,7 +475,7 @@ class ParsedCallPersistenceTests(TestCase):
             external_id=external_id,
             summary=summary,
             purpose="Enerji verimliliğini artırmak.",
-            eligibility_text="KOBI'ler başvurabilir.",
+            eligibility_text=eligibility_text,
             funding_text="100000 TRY destek.",
             application_open_at=application_open_at,
             deadline_at=deadline,
