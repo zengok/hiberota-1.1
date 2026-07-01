@@ -383,6 +383,47 @@ class ExampleAdapterFixtureTests(SimpleTestCase):
         self.assertEqual(parsed.application_open_at, datetime(2026, 5, 3, 21, 0, tzinfo=UTC))
         self.assertEqual(parsed.deadline_at, datetime(2026, 7, 17, 20, 59, 59, tzinfo=UTC))
 
+    def test_static_html_adapter_allows_configured_detail_hosts_and_extracts_turkish_listing_dates(self) -> None:
+        context = CrawlContext(
+            source_key="src-0024",
+            source_url="https://ka.gov.tr/destekler",
+            adapter_key="src-0024_html_v1",
+            config_version=1,
+            settings={
+                "allowed_detail_hosts": ["api.ka.gov.tr"],
+                "detail_link_keywords": ["destek programı"],
+                "discovered_item_status_override": "open",
+            },
+        )
+        item = DiscoveredItem(source_url=context.source_url, normalized_url=context.source_url)
+        result = FetchResult(
+            item=item,
+            final_url=context.source_url,
+            status_code=200,
+            content_type="text/html",
+            body_text="""
+            <html><body>
+              <a href="https://api.ka.gov.tr/redirect/example">
+                Çukurova Kalkınma Ajansı 2026 Yılı Teknik Destek Programı
+                Teklif Teslimi Başlangıç Tarihi 01 Mart 2026
+                Teklif Teslimi Bitiş Tarihi 29 Aralık 2026
+              </a>
+              <a href="https://elsewhere.example/destek-programi">Dış bağlantı</a>
+            </body></html>
+            """,
+            fetched_at=datetime(2026, 6, 30, tzinfo=UTC),
+            content_hash="hash",
+        )
+
+        items = StaticHtmlAdapter().discover_from_fetch(result, context)
+
+        self.assertEqual(len(items), 1)
+        self.assertEqual(items[0].normalized_url, "https://api.ka.gov.tr/redirect/example")
+        self.assertEqual(items[0].title_hint, "Çukurova Kalkınma Ajansı 2026 Yılı Teknik Destek Programı")
+        self.assertEqual(items[0].metadata["source_status"], "open")
+        self.assertEqual(items[0].metadata["application_open_at"], "2026-03-01T20:59:59+00:00")
+        self.assertEqual(items[0].metadata["deadline_at"], "2026-12-29T20:59:59+00:00")
+
     def test_static_html_adapter_ignores_invalid_deadline_override(self) -> None:
         context = CrawlContext(
             source_key="direct-call",

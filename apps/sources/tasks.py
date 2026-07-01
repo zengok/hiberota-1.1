@@ -214,6 +214,8 @@ def _is_portal_listing(*, context: CrawlContext, item: DiscoveredItem) -> bool:
 
 def _allowed_hosts_for(source: Source) -> frozenset[str]:
     hosts = {parsed.hostname for parsed in (urlparse(source.base_url), urlparse(source.listing_url)) if parsed.hostname}
+    config = source.config_json if isinstance(source.config_json, dict) else {}
+    hosts.update(str(host).strip() for host in config.get("allowed_detail_hosts", ()) if str(host).strip())
     hosts_with_www_variants = set(hosts)
     for host in hosts:
         if host.startswith("www."):

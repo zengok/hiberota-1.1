@@ -88,6 +88,7 @@ class StaticHtmlAdapter:
             html=result.body_text,
             base_url=result.final_url,
             source_url=context.source_url,
+            allowed_hosts=_tuple_setting(context.settings.get("allowed_detail_hosts")),
             keywords=tuple(context.settings.get("detail_link_keywords") or _DEFAULT_DETAIL_KEYWORDS),
             excluded_keywords=tuple(
                 context.settings.get("excluded_detail_link_keywords") or _DEFAULT_EXCLUDED_DETAIL_KEYWORDS
@@ -97,8 +98,12 @@ class StaticHtmlAdapter:
             DiscoveredItem(
                 source_url=result.final_url,
                 normalized_url=url,
-                title_hint=text,
-                metadata={"kind": "detail", "listing_url": result.final_url},
+                title_hint=_listing_title_hint(text, context.settings),
+                metadata={
+                    "kind": "detail",
+                    "listing_url": result.final_url,
+                    **_listing_metadata(text, context.settings),
+                },
             )
             for url, text in candidates[:max_links]
         )
@@ -119,10 +124,11 @@ class StaticHtmlAdapter:
         )
         title = _first_non_empty(
             str(context.settings.get("title_override", "")),
-            str(result.item.title_hint or result.item.metadata.get("title_hint", "")),
+            _preferred_listing_title_hint(result, context.settings),
             _extract_tag_text(result.body_text, "h1"),
             _extract_meta_content(result.body_text, "og:title"),
             _extract_tag_text(result.body_text, "title"),
+            _fallback_listing_title_hint(result),
         )
         summary = _first_non_empty(
             str(context.settings.get("summary_override", "")),
@@ -429,6 +435,104 @@ def _extract_structured_call_rows(*, html: str, base_url: str, source_url: str) 
     return items
 
 
+_DEFAULT_TITLE_STOP_PHRASES = (
+    "Teklif Teslimi Başlangıç Tarihi",
+    "Başvuru Başlangıç Tarihi",
+    "Başvuru Bitiş Tarihi",
+    "Son Başvuru Tarihi",
+)
+
+
+def _listing_title_hint(label: str, settings: Any) -> str:
+    title = label.strip()
+    stop_phrases = _tuple_setting(_setting_value(settings, "title_stop_phrases")) or _DEFAULT_TITLE_STOP_PHRASES
+    for phrase in stop_phrases:
+        index = title.casefold().find(phrase.casefold())
+        if index > 0:
+            return title[:index].strip(" -:|")
+    return title
+
+
+def _preferred_listing_title_hint(result: FetchResult, settings: Any) -> str:
+    if bool(_setting_value(settings, "prefer_listing_title_hint")):
+        return _fallback_listing_title_hint(result)
+    return ""
+
+
+def _fallback_listing_title_hint(result: FetchResult) -> str:
+    return str(result.item.title_hint or result.item.metadata.get("title_hint", ""))
+
+
+def _listing_metadata(label: str, settings: Any) -> dict[str, str]:
+    metadata: dict[str, str] = {}
+    if source_status := str(_setting_value(settings, "discovered_item_status_override") or "").strip():
+        metadata["source_status"] = source_status
+    open_at = _extract_labeled_turkish_date(
+        label,
+        (
+            "Teklif Teslimi Başlangıç Tarihi",
+            "Başvuru Başlangıç Tarihi",
+            "Başvuru Tarihi",
+        ),
+    )
+    deadline_at = _extract_labeled_turkish_date(
+        label,
+        (
+            "Teklif Teslimi Bitiş Tarihi",
+            "Başvuru Bitiş Tarihi",
+            "Son Başvuru Tarihi",
+            "Son Başvuru",
+        ),
+    )
+    if open_at is not None:
+        metadata["application_open_at"] = open_at.isoformat()
+    if deadline_at is not None:
+        metadata["deadline_at"] = deadline_at.isoformat()
+        metadata.setdefault("source_status", "open")
+    return metadata
+
+
+_TURKISH_MONTHS = {
+    "ocak": 1,
+    "şubat": 2,
+    "subat": 2,
+    "mart": 3,
+    "nisan": 4,
+    "mayıs": 5,
+    "mayis": 5,
+    "haziran": 6,
+    "temmuz": 7,
+    "ağustos": 8,
+    "agustos": 8,
+    "eylül": 9,
+    "eylul": 9,
+    "ekim": 10,
+    "kasım": 11,
+    "kasim": 11,
+    "aralık": 12,
+    "aralik": 12,
+}
+
+
+def _extract_labeled_turkish_date(text: str, labels: tuple[str, ...]) -> datetime | None:
+    for label in labels:
+        pattern = rf"{re.escape(label)}\s+(\d{{1,2}})\s+([A-Za-zÇĞİÖŞÜçğıöşü]+)\s+(\d{{4}})"
+        match = re.search(pattern, text, flags=re.IGNORECASE)
+        if match:
+            return _parse_turkish_date(day=match.group(1), month_name=match.group(2), year=match.group(3))
+    return None
+
+
+def _parse_turkish_date(*, day: str, month_name: str, year: str) -> datetime | None:
+    month = _TURKISH_MONTHS.get(month_name.casefold())
+    if month is None:
+        return None
+    try:
+        return datetime(int(year), month, int(day), 20, 59, 59, tzinfo=UTC)
+    except ValueError:
+        return None
+
+
 def _field_text_after_label(html: str, labels: tuple[str, ...]) -> str:
     for label in labels:
         match = re.search(
@@ -501,6 +605,7 @@ def _extract_detail_links(
     html: str,
     base_url: str,
     source_url: str,
+    allowed_hosts: tuple[str, ...] = (),
     keywords: tuple[str, ...],
     excluded_keywords: tuple[str, ...],
 ) -> list[tuple[str, str]]:
@@ -510,7 +615,11 @@ def _extract_detail_links(
     for href, text in re.findall(r'<a\s+[^>]*href=["\']([^"\']+)["\'][^>]*>(.*?)</a>', html, re.IGNORECASE | re.DOTALL):
         normalized_url = urldefrag(urljoin(base_url, unescape(href).strip())).url
         parsed = urlparse(normalized_url)
-        if parsed.scheme not in {"https", "http"} or not _hosts_match(parsed.hostname or "", allowed_host or ""):
+        if parsed.scheme not in {"https", "http"} or not _host_allowed(
+            parsed.hostname or "",
+            allowed_host or "",
+            allowed_hosts,
+        ):
             continue
         if normalized_url.rstrip("/") == source_url.rstrip("/") or normalized_url in seen:
             continue
@@ -533,6 +642,12 @@ def _hosts_match(candidate_host: str, allowed_host: str) -> bool:
     candidate = candidate_host.casefold().removeprefix("www.")
     allowed = allowed_host.casefold().removeprefix("www.")
     return bool(candidate and allowed and candidate == allowed)
+
+
+def _host_allowed(candidate_host: str, primary_host: str, allowed_hosts: tuple[str, ...]) -> bool:
+    if _hosts_match(candidate_host, primary_host):
+        return True
+    return any(_hosts_match(candidate_host, allowed_host) for allowed_host in allowed_hosts)
 
 
 def _first_non_empty(*values: str) -> str:

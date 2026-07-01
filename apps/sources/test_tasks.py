@@ -107,12 +107,16 @@ class SourceCrawlTaskTests(TestCase):
             "max_redirects": 1,
             "max_response_bytes": 12345,
             "min_request_interval_seconds": 2,
+            "allowed_detail_hosts": ["api.example.org"],
         }
         self.source.save(update_fields=["config_json", "updated_at"])
 
         request = _safe_http_request_for(source=self.source, url="https://example.org/calls")
 
-        self.assertEqual(request.allowed_hosts, frozenset({"example.org", "www.example.org"}))
+        self.assertEqual(
+            request.allowed_hosts,
+            frozenset({"api.example.org", "example.org", "www.api.example.org", "www.example.org"}),
+        )
         self.assertEqual(request.robots_txt, "User-agent: *\nDisallow: /private\n")
         self.assertEqual(request.user_agent, "HibeRotaBot/Test")
         self.assertEqual(request.timeout_seconds, 4)
