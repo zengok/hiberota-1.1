@@ -474,6 +474,7 @@ class HomepageTests(TestCase):
         institution: Institution,
         country: Country,
         workflow_status: str = GrantCall.WorkflowStatus.PUBLISHED,
+        is_featured: bool = False,
     ) -> GrantCall:
         now = timezone.now()
         call = GrantCall.objects.create(
@@ -489,6 +490,7 @@ class HomepageTests(TestCase):
             deadline_at=now + timedelta(days=10),
             workflow_status=workflow_status,
             availability_status=GrantCall.AvailabilityStatus.OPEN,
+            is_featured=is_featured,
             published_at=now,
         )
         call.countries.add(country)
@@ -502,6 +504,7 @@ class HomepageTests(TestCase):
             source=self.source,
             institution=self.institution,
             country=self.turkey,
+            is_featured=True,
         )
         self._create_call(
             title="Dünya Fon Çağrısı",
@@ -529,6 +532,10 @@ class HomepageTests(TestCase):
         self.assertContains(response, "Son dünya çağrıları")
         self.assertContains(response, "Dünya Fon Çağrısı")
         self.assertContains(response, "Yaklaşan son tarihler")
+        self.assertContains(response, "Çağrı detayları")
+        self.assertContains(response, f'href="/cagrilar/turkiye-hibe-cagrisi-{response.context["hero_call"].id}/"')
+        self.assertContains(response, 'href="/cagrilar/?kapsam=dunya"')
+        self.assertContains(response, 'href="/cagrilar/?siralama=son-tarih-yakin"')
         self.assertContains(response, "Türkiye Kurumu")
         self.assertIn(">2</strong> aktif çağrı", content)
         self.assertIn(">2</strong> kurum", content)

@@ -43,6 +43,7 @@ STATUS_SORT_ORDER = Case(
 
 FILTER_LABELS = {
     "q": "Arama",
+    "kapsam": "Kapsam",
     "ulke": "Ülke",
     "avrupa": "Avrupa",
     "bolge": "Bölge",
@@ -112,6 +113,9 @@ def apply_call_filters(calls: QuerySet[GrantCall], params: QueryDict) -> QuerySe
 
     if country_code := params.get("ulke"):
         calls = calls.filter(countries__code=country_code.upper())
+
+    if params.get("kapsam") == "dunya":
+        calls = calls.exclude(countries__code="TR")
 
     if params.get("avrupa") == "1":
         calls = calls.filter(countries__is_europe=True)
@@ -228,6 +232,8 @@ def _display_filter_value(key: str, value: str) -> str:
         return SORT_OPTIONS.get(value, SORT_OPTIONS["yeni"])[1]
     if key == "avrupa" and value == "1":
         return "Avrupa"
+    if key == "kapsam" and value == "dunya":
+        return "Dünya"
     return value
 
 

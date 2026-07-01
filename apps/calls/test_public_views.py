@@ -225,6 +225,32 @@ class CallListViewTests(TestCase):
         self.assertContains(response, 'name="robots" content="noindex,follow"')
         self.assertNotIn("KOBİ Avrupa Programı", content)
 
+    def test_call_list_filters_world_scope_outside_turkey(self) -> None:
+        self._create_call(
+            title="Türkiye Programı",
+            slug="turkiye-programi",
+            source=self.source,
+            institution=self.institution,
+            country=self.turkey,
+            audience=self.student,
+        )
+        self._create_call(
+            title="Avrupa Programı",
+            slug="avrupa-programi",
+            source=self.world_source,
+            institution=self.world_institution,
+            country=self.france,
+            audience=self.sme,
+        )
+
+        response = Client().get("/cagrilar/", {"kapsam": "dunya"})
+        content = response.content.decode()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Avrupa Programı")
+        self.assertContains(response, "Kapsam: Dünya")
+        self.assertNotIn("Türkiye Programı", content)
+
     def test_call_list_mobile_filter_controls_are_accessible(self) -> None:
         response = Client().get("/cagrilar/", {"q": "bulunmayacak"})
         content = response.content.decode()

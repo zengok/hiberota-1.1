@@ -47,6 +47,13 @@ def get_homepage_context() -> dict[str, Any]:
     upcoming_deadlines = (
         base_calls.filter(deadline_at__gte=now).order_by("deadline_at", "-first_seen_at").distinct()[:HOME_CALL_LIMIT]
     )
+    hero_call = (
+        base_calls.filter(deadline_at__gte=now)
+        .order_by("-is_featured", "deadline_at", "-first_seen_at")
+        .distinct()
+        .first()
+        or base_calls.order_by("-is_featured", "-first_seen_at").distinct().first()
+    )
     featured_institutions = (
         Institution.objects.filter(is_active=True, is_verified=True)
         .select_related("country")
@@ -73,6 +80,7 @@ def get_homepage_context() -> dict[str, Any]:
         "canonical_path": "/",
         "robots": "index,follow",
         "quick_start_cards": QUICK_START_CARDS,
+        "hero_call": hero_call,
         "recent_turkey_calls": recent_turkey_calls,
         "recent_world_calls": recent_world_calls,
         "upcoming_deadlines": upcoming_deadlines,
