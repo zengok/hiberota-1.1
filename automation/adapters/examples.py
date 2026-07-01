@@ -76,6 +76,14 @@ class StaticHtmlAdapter:
             return ()
 
         max_links = int(context.settings.get("max_detail_links") or 20)
+        structured_items = _extract_structured_call_rows(
+            html=result.body_text,
+            base_url=result.final_url,
+            source_url=context.source_url,
+        )
+        if structured_items:
+            return tuple(structured_items[:max_links])
+
         candidates = _extract_detail_links(
             html=result.body_text,
             base_url=result.final_url,
@@ -96,13 +104,22 @@ class StaticHtmlAdapter:
         )
 
     def parse(self, result: FetchResult, context: CrawlContext) -> ParsedCall:
-        source_status = _extract_source_status(result.body_text, context.settings)
+        source_status = _first_non_empty(
+            str(result.item.metadata.get("source_status", "")),
+            _extract_source_status(result.body_text, context.settings),
+        )
+        application_open_at = _first_non_empty_datetime(
+            _parse_utc_date(result.item.metadata.get("application_open_at")),
+            _parse_utc_date(context.settings.get("application_open_date_override")),
+        )
         deadline_at = _first_non_empty_datetime(
+            _parse_utc_date(result.item.metadata.get("deadline_at")),
             _parse_utc_date(context.settings.get("deadline_date_override")),
             _extract_deadline_at(result.body_text, context.settings),
         )
         title = _first_non_empty(
             str(context.settings.get("title_override", "")),
+            str(result.item.title_hint or result.item.metadata.get("title_hint", "")),
             _extract_tag_text(result.body_text, "h1"),
             _extract_meta_content(result.body_text, "og:title"),
             _extract_tag_text(result.body_text, "title"),
@@ -111,6 +128,7 @@ class StaticHtmlAdapter:
             str(context.settings.get("summary_override", "")),
             _extract_meta_content(result.body_text, "description"),
             _extract_meta_content(result.body_text, "og:description"),
+            str(result.item.metadata.get("summary_hint", "")),
             _extract_tag_text(result.body_text, "p"),
         )
         evidence = tuple(
@@ -120,10 +138,17 @@ class StaticHtmlAdapter:
                 _evidence("summary", result.final_url, summary, "meta[name=description]|p", 70),
                 _evidence("source_status", result.final_url, source_status, "configured status regex|status field", 80),
                 _evidence(
+                    "application_open_at",
+                    result.final_url,
+                    application_open_at.isoformat() if application_open_at else "",
+                    "listing metadata|configured open date",
+                    80,
+                ),
+                _evidence(
                     "deadline",
                     result.final_url,
                     deadline_at.isoformat() if deadline_at else "",
-                    "time[datetime]|configured deadline regex",
+                    "listing metadata|time[datetime]|configured deadline regex",
                     80,
                 ),
             )
@@ -140,6 +165,7 @@ class StaticHtmlAdapter:
                 context.settings.get("funding_text_override") or context.settings.get("funding_scope", "")
             ),
             application_process_text=str(context.settings.get("application_process_text_override", "")),
+            application_open_at=application_open_at,
             deadline_at=deadline_at,
             country_codes=_tuple_setting(context.settings.get("country_codes_override")),
             audience_keys=_tuple_setting(
@@ -235,6 +261,19 @@ _DEFAULT_EXCLUDED_DETAIL_KEYWORDS = (
     "kvkk",
     "gizlilik",
     "cerez",
+    "dokuman",
+    "doküman",
+    "ihale",
+    "kilavuz",
+    "kılavuz",
+    "satinalma",
+    "satın alma",
+    "sonuc",
+    "sonuç",
+    "sonuclari",
+    "sonuçları",
+    "tamamlandi",
+    "tamamlandı",
 )
 
 
@@ -280,11 +319,23 @@ def _extract_source_status(html: str, settings: Any) -> str:
         _field_text_after_label(html, _STATUS_LABELS),
     )
     normalized = status_text.casefold()
+    page_text = _clean_html_text(html).casefold()
     closed_values = _tuple_setting(_setting_value(settings, "status_closed_values")) or ("closed", "kapalı")
     open_values = _tuple_setting(_setting_value(settings, "status_open_values")) or ("open", "açık")
     if any(value.casefold() in normalized for value in closed_values):
         return "closed"
     if any(value.casefold() in normalized for value in open_values):
+        return "open"
+    open_phrases = (
+        "başvuruya açılmıştır",
+        "başvuruya açıldı",
+        "başvuruları başladı",
+        "çağrısı açıldı",
+        "çağrıları açıldı",
+        "cagrisi acildi",
+        "cagrilari acildi",
+    )
+    if any(phrase in page_text for phrase in open_phrases):
         return "open"
     return ""
 
@@ -320,6 +371,62 @@ def _extract_deadline_at(html: str, settings: Any) -> datetime | None:
         _time_datetime_after_class(html, "field-award-deadline"),
     )
     return _parse_utc_date(deadline_value)
+
+
+def _extract_structured_call_rows(*, html: str, base_url: str, source_url: str) -> list[DiscoveredItem]:
+    allowed_host = urlparse(source_url).hostname
+    items: list[DiscoveredItem] = []
+    seen: set[str] = set()
+    title_pattern = (
+        r'<div[^>]+class=["\'][^"\']*\bc-baslik\b[^"\']*["\'][^>]*>.*?'
+        r'<a\s+[^>]*href=["\']([^"\']+)["\'][^>]*>(.*?)</a>'
+    )
+    for title_match in re.finditer(title_pattern, html, flags=re.IGNORECASE | re.DOTALL):
+        row_start = html.rfind("views-row", 0, title_match.start())
+        if row_start == -1:
+            continue
+        row_start = html.rfind("<div", 0, row_start)
+        next_row = html.find("views-row", title_match.end())
+        row_end = html.find("</main>", title_match.end())
+        if row_end == -1:
+            row_end = html.find("</body>", title_match.end())
+        if next_row != -1:
+            next_row_start = html.rfind("<div", 0, next_row)
+            if next_row_start > title_match.end():
+                row_end = next_row_start
+        if row_end == -1:
+            row_end = min(len(html), title_match.end() + 2400)
+        row = html[row_start:row_end]
+        normalized_url = urldefrag(urljoin(base_url, unescape(title_match.group(1)).strip())).url
+        parsed = urlparse(normalized_url)
+        if parsed.scheme not in {"https", "http"} or not _hosts_match(parsed.hostname or "", allowed_host or ""):
+            continue
+        if normalized_url.rstrip("/") == source_url.rstrip("/") or normalized_url in seen:
+            continue
+        times = re.findall(r'<time[^>]+datetime=["\']([^"\']+)["\']', row, flags=re.IGNORECASE | re.DOTALL)
+        summary = _first_non_empty(_field_text_after_class(row, "c-icerik"), _clean_html_text(row))
+        title = _clean_html_text(title_match.group(2))
+        metadata = {
+            "kind": "detail",
+            "listing_url": base_url,
+            "title_hint": title,
+            "summary_hint": summary,
+            "source_status": "open",
+        }
+        if times:
+            metadata["application_open_at"] = times[0]
+        if len(times) >= 2:
+            metadata["deadline_at"] = times[1]
+        seen.add(normalized_url)
+        items.append(
+            DiscoveredItem(
+                source_url=base_url,
+                normalized_url=normalized_url,
+                title_hint=title,
+                metadata=metadata,
+            )
+        )
+    return items
 
 
 def _field_text_after_label(html: str, labels: tuple[str, ...]) -> str:
@@ -359,6 +466,17 @@ def _field_item_after_class(html: str, class_fragment: str) -> str:
     if not item_match:
         return ""
     return _clean_html_text(item_match.group(1))
+
+
+def _field_text_after_class(html: str, class_fragment: str) -> str:
+    marker_match = re.search(rf'<[^>]+class=["\'][^"\']*{re.escape(class_fragment)}[^"\']*["\']', html, re.IGNORECASE)
+    if not marker_match:
+        return ""
+    snippet = html[marker_match.start() : marker_match.start() + 1200]
+    block_match = re.search(r"<div[^>]*>(.*?)</div>", snippet, flags=re.IGNORECASE | re.DOTALL)
+    if not block_match:
+        return ""
+    return _clean_html_text(block_match.group(1))
 
 
 def _time_datetime_after_class(html: str, class_fragment: str) -> str:

@@ -264,6 +264,44 @@ class CallListViewTests(TestCase):
         self.assertLess(content.index("Eski Çağrı"), content.index("Yeni Çağrı"))
         self.assertContains(response, 'type="hidden" name="ulke" value="TR"')
 
+    def test_call_list_prioritizes_live_calls_before_unknown_and_closed(self) -> None:
+        self._create_call(
+            title="Kapalı Çağrı",
+            slug="kapali-cagri",
+            source=self.source,
+            institution=self.institution,
+            country=self.turkey,
+            audience=self.student,
+            first_seen_offset_days=3,
+            status=GrantCall.AvailabilityStatus.CLOSED,
+        )
+        self._create_call(
+            title="Tarihi Belirsiz Çağrı",
+            slug="tarihi-belirsiz-cagri-siralama",
+            source=self.source,
+            institution=self.institution,
+            country=self.turkey,
+            audience=self.student,
+            first_seen_offset_days=2,
+            status=GrantCall.AvailabilityStatus.UNKNOWN,
+        )
+        self._create_call(
+            title="Açık Çağrı",
+            slug="acik-cagri",
+            source=self.source,
+            institution=self.institution,
+            country=self.turkey,
+            audience=self.student,
+            first_seen_offset_days=-1,
+            status=GrantCall.AvailabilityStatus.OPEN,
+        )
+
+        response = Client().get("/cagrilar/")
+        content = response.content.decode()
+
+        self.assertLess(content.index("Açık Çağrı"), content.index("Tarihi Belirsiz Çağrı"))
+        self.assertLess(content.index("Tarihi Belirsiz Çağrı"), content.index("Kapalı Çağrı"))
+
     def test_call_detail_renders_published_call_with_source_links(self) -> None:
         call = self._create_call(
             title="Detaylı Hibe Çağrısı",

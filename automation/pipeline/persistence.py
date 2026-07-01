@@ -103,6 +103,11 @@ def _upsert_grant_call(
         deadline_at=parsed_call.deadline_at,
         now=now,
     )
+    source_status = str(parsed_call.raw_metadata.get("source_status", "")).casefold()
+    if source_status == "open" and availability_status == GrantCall.AvailabilityStatus.UNKNOWN:
+        availability_status = GrantCall.AvailabilityStatus.OPEN
+    elif source_status == "closed":
+        availability_status = GrantCall.AvailabilityStatus.CLOSED
     fingerprint = build_duplicate_fingerprint(
         institution_id=source.institution_id,
         title=parsed_call.title,

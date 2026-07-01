@@ -298,6 +298,91 @@ class ExampleAdapterFixtureTests(SimpleTestCase):
         self.assertEqual(parsed.raw_metadata["source_status"], "open")
         self.assertEqual(parsed.deadline_at, datetime(2026, 3, 1, tzinfo=UTC))
 
+    def test_static_html_adapter_discovers_tubitak_open_call_rows_with_listing_dates(self) -> None:
+        context = CrawlContext(
+            source_key="src-0020",
+            source_url="https://tubitak.gov.tr/tr/acik-cagrilar",
+            adapter_key="src-0020_html_v1",
+            config_version=1,
+            settings={"max_detail_links": 5},
+        )
+        item = DiscoveredItem(
+            source_url="https://tubitak.gov.tr/tr/acik-cagrilar",
+            normalized_url="https://tubitak.gov.tr/tr/acik-cagrilar",
+        )
+        result = FetchResult(
+            item=item,
+            final_url=item.normalized_url,
+            status_code=200,
+            content_type="text/html",
+            body_text="""
+            <html><body><main>
+              <div class="views-row">
+                <div class="views-field views-field-title">
+                  <div class="field-content">
+                    <div class="c-baslik">
+                      <a href="/tr/destekler/destek/sanayi/cagri-1707-siparis-ar-ge-2026-2-cagrisi-acildi">
+                        1707 Sipariş Ar-Ge 2026-2 Çağrısı Açıldı
+                      </a>
+                    </div>
+                    <div class="c-kodu">#1707 Sipariş Ar-Ge 2026-2</div>
+                    <div class="c-icerik">İlgili destek: 1707 Siparişe Dayalı Ar-Ge Projeleri</div>
+                    <span>Başvuru aralığı</span>
+                    <div class="field-content">
+                      <time datetime="2026-05-03T21:00:00Z">04 May 2026 - 00:00</time>
+                      -
+                      <time datetime="2026-07-17T20:59:59Z">17 Tem 2026 - 23:59</time>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </main></body></html>
+            """,
+            fetched_at=datetime(2026, 6, 30, tzinfo=UTC),
+            content_hash="hash",
+        )
+
+        items = StaticHtmlAdapter().discover_from_fetch(result, context)
+
+        self.assertEqual(len(items), 1)
+        self.assertEqual(
+            items[0].normalized_url,
+            "https://tubitak.gov.tr/tr/destekler/destek/sanayi/cagri-1707-siparis-ar-ge-2026-2-cagrisi-acildi",
+        )
+        self.assertEqual(items[0].metadata["source_status"], "open")
+        self.assertEqual(items[0].metadata["application_open_at"], "2026-05-03T21:00:00Z")
+        self.assertEqual(items[0].metadata["deadline_at"], "2026-07-17T20:59:59Z")
+
+    def test_static_html_adapter_uses_listing_metadata_dates_and_title_hint(self) -> None:
+        item = DiscoveredItem(
+            source_url="https://tubitak.gov.tr/tr/acik-cagrilar",
+            normalized_url="https://tubitak.gov.tr/tr/destekler/destek/sanayi/cagri-1707",
+            title_hint="1707 Sipariş Ar-Ge 2026-2 Çağrısı Açıldı",
+            metadata={
+                "kind": "detail",
+                "source_status": "open",
+                "application_open_at": "2026-05-03T21:00:00Z",
+                "deadline_at": "2026-07-17T20:59:59Z",
+                "summary_hint": "İlgili destek: 1707 Siparişe Dayalı Ar-Ge Projeleri",
+            },
+        )
+        result = FetchResult(
+            item=item,
+            final_url=item.normalized_url,
+            status_code=200,
+            content_type="text/html",
+            body_text="<html><body><p>Detay sayfası</p></body></html>",
+            fetched_at=datetime(2026, 6, 30, tzinfo=UTC),
+            content_hash="hash",
+        )
+
+        parsed = StaticHtmlAdapter().parse(result, self.context)
+
+        self.assertEqual(parsed.title, "1707 Sipariş Ar-Ge 2026-2 Çağrısı Açıldı")
+        self.assertEqual(parsed.raw_metadata["source_status"], "open")
+        self.assertEqual(parsed.application_open_at, datetime(2026, 5, 3, 21, 0, tzinfo=UTC))
+        self.assertEqual(parsed.deadline_at, datetime(2026, 7, 17, 20, 59, 59, tzinfo=UTC))
+
     def test_static_html_adapter_ignores_invalid_deadline_override(self) -> None:
         context = CrawlContext(
             source_key="direct-call",

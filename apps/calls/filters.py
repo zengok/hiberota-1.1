@@ -5,7 +5,7 @@ from datetime import date
 from typing import Any
 
 from django.core.paginator import Page, Paginator
-from django.db.models import Q, QuerySet
+from django.db.models import Case, IntegerField, Q, QuerySet, Value, When
 from django.http import QueryDict
 from django.urls import reverse
 
@@ -30,6 +30,16 @@ STATUS_LABELS: dict[str, str] = {
     GrantCall.AvailabilityStatus.CLOSING_SOON: "Kapanmak üzere",
     GrantCall.AvailabilityStatus.CLOSED: "Kapalı",
 }
+
+STATUS_SORT_ORDER = Case(
+    When(availability_status=GrantCall.AvailabilityStatus.CLOSING_SOON, then=Value(0)),
+    When(availability_status=GrantCall.AvailabilityStatus.OPEN, then=Value(1)),
+    When(availability_status=GrantCall.AvailabilityStatus.UPCOMING, then=Value(2)),
+    When(availability_status=GrantCall.AvailabilityStatus.UNKNOWN, then=Value(3)),
+    When(availability_status=GrantCall.AvailabilityStatus.CLOSED, then=Value(4)),
+    default=Value(5),
+    output_field=IntegerField(),
+)
 
 FILTER_LABELS = {
     "q": "Arama",
@@ -152,9 +162,10 @@ def apply_date_range(
 
 def apply_call_sort(calls: QuerySet[GrantCall], sort_key: str) -> QuerySet[GrantCall]:
     order_field = SORT_OPTIONS.get(sort_key, SORT_OPTIONS["yeni"])[0]
+    calls = calls.annotate(_status_sort_order=STATUS_SORT_ORDER)
     if order_field.lstrip("-") in {"deadline_at", "application_open_at"}:
-        return calls.order_by(f"{order_field}", "-first_seen_at")
-    return calls.order_by(order_field)
+        return calls.order_by("_status_sort_order", f"{order_field}", "-first_seen_at")
+    return calls.order_by("_status_sort_order", order_field)
 
 
 def paginate_calls(calls: QuerySet[GrantCall], params: QueryDict) -> Page[GrantCall]:

@@ -62,9 +62,15 @@ class Command(BaseCommand):
             calls = GrantCall.objects.filter(id__in=safe_call_ids).select_for_update()
             published_count = 0
             for call in calls:
+                previous_availability_status = call.availability_status
                 call.workflow_status = GrantCall.WorkflowStatus.PUBLISHED
                 call.published_at = published_at
                 apply_availability_status(call, now=published_at)
+                if (
+                    previous_availability_status == GrantCall.AvailabilityStatus.OPEN
+                    and call.availability_status == GrantCall.AvailabilityStatus.UNKNOWN
+                ):
+                    call.availability_status = GrantCall.AvailabilityStatus.OPEN
                 call.save(update_fields=["workflow_status", "published_at", "availability_status", "updated_at"])
                 published_count += 1
 

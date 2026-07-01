@@ -284,6 +284,18 @@ class ParsedCallPersistenceTests(TestCase):
             ).exists()
         )
 
+    def test_open_source_status_keeps_missing_deadline_call_visible_as_open(self) -> None:
+        result = persist_parsed_call(
+            source=self.source,
+            parsed_call=self._parsed_call(include_deadline=False, raw_metadata={"source_status": "open"}),
+            fetched_at=self.fetched_at,
+            content_hash="hash-open-source-status",
+            parser_version="parser-1",
+        )
+
+        self.assertEqual(result.grant_call.availability_status, GrantCall.AvailabilityStatus.OPEN)
+        self.assertTrue(result.review_created)
+
     def test_missing_official_url_blocks_auto_publish_even_when_score_is_high(self) -> None:
         result = persist_parsed_call(
             source=self.source,
