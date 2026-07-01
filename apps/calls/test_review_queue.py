@@ -152,6 +152,115 @@ class ReviewQueueReportTests(TestCase):
         with self.assertRaises(CommandError):
             call_command("reject_review_queue_category", "--category=needs_manual_review", stdout=StringIO())
 
+    def test_report_classifies_turkish_listing_pages_as_guidance(self) -> None:
+        call = self._create_review_call(
+            title="Destek ve Duyurular",
+            url="https://example.org/destek-ve-duyurular",
+            deadline_at=None,
+            availability_status=GrantCall.AvailabilityStatus.UNKNOWN,
+            confidence_score=70,
+        )
+        ReviewItem.objects.create(grant_call=call, reason_code=ReviewItem.ReasonCode.LOW_CONFIDENCE)
+
+        report = build_review_queue_report(now=self.now)
+
+        self.assertEqual(report.entries[0].category, ReviewQueueCategory.GUIDANCE_PAGE)
+
+    def test_publish_regional_review_calls_publishes_safe_turkey_and_europe_candidates(self) -> None:
+        europe_country = Country.objects.create(code="DE", name_tr="Almanya", name_en="Germany", is_europe=True)
+        other_country = Country.objects.create(code="US", name_tr="ABD", name_en="United States", is_europe=False)
+        europe_institution = Institution.objects.create(country=europe_country, name="EU Kurum", slug="eu-kurum")
+        other_institution = Institution.objects.create(country=other_country, name="US Kurum", slug="us-kurum")
+        europe_source = Source.objects.create(
+            institution=europe_institution,
+            source_key="source-de",
+            name="DE Source",
+            base_url="https://de.example.org",
+            listing_url="https://de.example.org/funding",
+            source_type=Source.SourceType.HTML,
+            adapter_key="source_de_html_v1",
+            status=Source.Status.ACTIVE,
+            crawl_interval_minutes=60,
+            robots_status=Source.RobotsStatus.ALLOWED,
+            terms_status=Source.TermsStatus.REVIEWED,
+        )
+        other_source = Source.objects.create(
+            institution=other_institution,
+            source_key="source-us",
+            name="US Source",
+            base_url="https://us.example.org",
+            listing_url="https://us.example.org/funding",
+            source_type=Source.SourceType.HTML,
+            adapter_key="source_us_html_v1",
+            status=Source.Status.ACTIVE,
+            crawl_interval_minutes=60,
+            robots_status=Source.RobotsStatus.ALLOWED,
+            terms_status=Source.TermsStatus.REVIEWED,
+        )
+        turkey = self._create_review_call(
+            title="Yeşil dönüşüm çağrısı",
+            url="https://example.org/funding/green-transition",
+            deadline_at=self.now + timedelta(days=30),
+            availability_status=GrantCall.AvailabilityStatus.OPEN,
+            confidence_score=75,
+        )
+        europe = self._create_review_call(
+            title="European innovation fund",
+            url="https://de.example.org/funding/innovation",
+            deadline_at=self.now + timedelta(days=30),
+            availability_status=GrantCall.AvailabilityStatus.OPEN,
+            confidence_score=75,
+        )
+        europe.source = europe_source
+        europe.institution = europe_institution
+        europe.save(update_fields=["source", "institution", "updated_at"])
+        other = self._create_review_call(
+            title="US innovation fund",
+            url="https://us.example.org/funding/innovation",
+            deadline_at=self.now + timedelta(days=30),
+            availability_status=GrantCall.AvailabilityStatus.OPEN,
+            confidence_score=75,
+        )
+        other.source = other_source
+        other.institution = other_institution
+        other.save(update_fields=["source", "institution", "updated_at"])
+        guidance = self._create_review_call(
+            title="Duyurular",
+            url="https://example.org/duyurular",
+            deadline_at=self.now + timedelta(days=30),
+            availability_status=GrantCall.AvailabilityStatus.OPEN,
+            confidence_score=75,
+        )
+        blocked = self._create_review_call(
+            title="Takvim çakışması",
+            url="https://example.org/funding/conflict",
+            deadline_at=self.now + timedelta(days=30),
+            availability_status=GrantCall.AvailabilityStatus.OPEN,
+            confidence_score=90,
+        )
+        for call in (turkey, europe, other, guidance):
+            ReviewItem.objects.create(grant_call=call, reason_code=ReviewItem.ReasonCode.LOW_CONFIDENCE)
+        ReviewItem.objects.create(grant_call=blocked, reason_code=ReviewItem.ReasonCode.DEADLINE_CONFLICT)
+
+        call_command("publish_regional_review_calls", "--region=tr-europe", "--commit", stdout=StringIO())
+
+        turkey.refresh_from_db()
+        europe.refresh_from_db()
+        other.refresh_from_db()
+        guidance.refresh_from_db()
+        blocked.refresh_from_db()
+        self.assertEqual(turkey.workflow_status, GrantCall.WorkflowStatus.PUBLISHED)
+        self.assertEqual(europe.workflow_status, GrantCall.WorkflowStatus.PUBLISHED)
+        self.assertEqual(other.workflow_status, GrantCall.WorkflowStatus.REVIEW)
+        self.assertEqual(guidance.workflow_status, GrantCall.WorkflowStatus.REVIEW)
+        self.assertEqual(blocked.workflow_status, GrantCall.WorkflowStatus.REVIEW)
+        self.assertFalse(
+            ReviewItem.objects.filter(
+                grant_call__in=(turkey, europe),
+                status__in=(ReviewItem.Status.OPEN, ReviewItem.Status.IN_PROGRESS),
+            ).exists()
+        )
+
     def test_normalize_review_reason_codes_resolves_only_false_deadline_conflicts(self) -> None:
         false_conflict = self._create_review_call(
             title="Missing date review",

@@ -61,7 +61,27 @@ class ImportSourceCatalogCommandTests(TestCase):
         self.assertEqual(source.config_json["audience_hints"], ["researcher", "sme"])
         self.assertEqual(source.config_json["priority"], "high")
         self.assertEqual(source.institution.country.code, "TR")
+        self.assertTrue(source.institution.country.is_europe)
         self.assertTrue(source.institution.is_verified)
+
+    def test_commit_updates_existing_country_region_flags(self) -> None:
+        Country.objects.create(code="TR", name_tr="TR", name_en="TR", region_code="", is_europe=False)
+        catalog_path = _write_catalog([CATALOG_ROW])
+
+        call_command("import_source_catalog", catalog_path, "--commit", stdout=StringIO())
+
+        country = Country.objects.get(code="TR")
+        self.assertEqual(country.region_code, "europe")
+        self.assertTrue(country.is_europe)
+
+    def test_commit_marks_eu_catalog_country_as_european_union_member(self) -> None:
+        catalog_path = _write_catalog([CATALOG_ROW | {"source_key": "eu_calls", "country_code": "EU"}])
+
+        call_command("import_source_catalog", catalog_path, "--commit", stdout=StringIO())
+
+        country = Country.objects.get(code="EU")
+        self.assertTrue(country.is_europe)
+        self.assertTrue(country.is_eu_member)
 
     def test_commit_updates_existing_source_and_increments_config_version(self) -> None:
         catalog_path = _write_catalog([CATALOG_ROW])

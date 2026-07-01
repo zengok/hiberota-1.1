@@ -64,6 +64,41 @@ class SchedulerTests(TestCase):
 
         self.assertEqual(due_sources(), [source])
 
+    def test_due_sources_prioritize_turkey_then_europe_then_other_regions(self) -> None:
+        europe_country = Country.objects.create(code="DE", name_tr="Almanya", name_en="Germany", is_europe=True)
+        other_country = Country.objects.create(code="US", name_tr="ABD", name_en="United States", is_europe=False)
+        europe_institution = Institution.objects.create(name="EU Kurum", slug="eu-kurum", country=europe_country)
+        other_institution = Institution.objects.create(name="US Kurum", slug="us-kurum", country=other_country)
+        other = self.create_source(
+            source_key="source-us",
+            name="US Source",
+            institution=other_institution,
+            config_json={"priority": 1},
+        )
+        europe = self.create_source(
+            source_key="source-de",
+            name="DE Source",
+            institution=europe_institution,
+            config_json={"priority": 1},
+        )
+        turkey = self.create_source(source_key="source-tr", name="TR Source", config_json={"priority": 9})
+
+        self.assertEqual(due_sources(), [turkey, europe, other])
+
+    def test_due_sources_order_by_catalog_priority_inside_region(self) -> None:
+        low_priority = self.create_source(
+            source_key="source-low",
+            name="Low Priority",
+            config_json={"priority": 20},
+        )
+        high_priority = self.create_source(
+            source_key="source-high",
+            name="High Priority",
+            config_json={"priority": 1},
+        )
+
+        self.assertEqual(due_sources(), [high_priority, low_priority])
+
     def test_crawl_lock_allows_single_holder(self) -> None:
         cache.clear()
         lock = CrawlLock(source_id=1)

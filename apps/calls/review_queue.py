@@ -63,10 +63,19 @@ GUIDANCE_KEYWORDS = (
     "information",
     "instructions",
     "manual",
+    "nasıl başvurulur",
+    "nasıl destek alınır",
     "policy",
     "procedure",
     "resources",
+    "sıkça sorulan",
     "terms",
+    "sss",
+    "duyurular",
+    "destek ve duyurular",
+    "destekler",
+    "destek programları",
+    "tamamlandı",
 )
 
 PUBLISHABLE_STATUSES = (

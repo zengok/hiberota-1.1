@@ -14,6 +14,54 @@ from apps.institutions.models import Country, Institution
 from apps.sources.catalog_validation import CatalogValidationIssue, validate_source_catalog_rows
 from apps.sources.models import Source
 
+EUROPE_COUNTRY_CODES = {
+    "AD",
+    "AL",
+    "AT",
+    "BA",
+    "BE",
+    "BG",
+    "BY",
+    "CH",
+    "CY",
+    "CZ",
+    "DE",
+    "DK",
+    "EE",
+    "ES",
+    "EU",
+    "FI",
+    "FR",
+    "GB",
+    "GR",
+    "HR",
+    "HU",
+    "IE",
+    "IS",
+    "IT",
+    "LI",
+    "LT",
+    "LU",
+    "LV",
+    "MC",
+    "MD",
+    "ME",
+    "MK",
+    "MT",
+    "NL",
+    "NO",
+    "PL",
+    "PT",
+    "RO",
+    "RS",
+    "SE",
+    "SI",
+    "SK",
+    "TR",
+    "UA",
+    "VA",
+}
+
 
 @dataclass(frozen=True, slots=True)
 class ImportSummary:
@@ -124,19 +172,34 @@ def _import_rows(rows: list[dict[str, Any]]) -> ImportSummary:
     }
 
     for row in rows:
+        country_code = _clean(row["country_code"]).upper()
+        region_code = _clean(row.get("region_code"))
         country, country_created = Country.objects.get_or_create(
-            code=_clean(row["country_code"]).upper(),
+            code=country_code,
             defaults={
-                "name_tr": _clean(row["country_code"]).upper(),
-                "name_en": _clean(row["country_code"]).upper(),
-                "region_code": _clean(row.get("region_code")),
+                "name_tr": country_code,
+                "name_en": country_code,
+                "region_code": region_code,
+                "is_europe": _is_europe_country(country_code=country_code, region_code=region_code),
+                "is_eu_member": country_code == "EU",
             },
         )
         if country_created:
             mutable_summary["countries_created"] += 1
-        elif row.get("region_code") and country.region_code != _clean(row.get("region_code")):
-            country.region_code = _clean(row.get("region_code"))
-            country.save(update_fields=["region_code", "updated_at"])
+        else:
+            country_updates = []
+            is_europe = _is_europe_country(country_code=country_code, region_code=region_code)
+            if region_code and country.region_code != region_code:
+                country.region_code = region_code
+                country_updates.append("region_code")
+            if country.is_europe != is_europe:
+                country.is_europe = is_europe
+                country_updates.append("is_europe")
+            if country_code == "EU" and not country.is_eu_member:
+                country.is_eu_member = True
+                country_updates.append("is_eu_member")
+            if country_updates:
+                country.save(update_fields=[*country_updates, "updated_at"])
 
         institution, institution_created = Institution.objects.update_or_create(
             country=country,
@@ -221,6 +284,10 @@ def _split_csv_value(value: Any) -> list[str]:
 
 def _parse_bool(value: Any) -> bool:
     return _clean(value).lower() in {"true", "1", "yes"}
+
+
+def _is_europe_country(*, country_code: str, region_code: str) -> bool:
+    return region_code.casefold() == "europe" or country_code in EUROPE_COUNTRY_CODES
 
 
 def _clean(value: Any) -> str:
