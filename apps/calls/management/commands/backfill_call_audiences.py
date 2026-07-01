@@ -23,6 +23,12 @@ class Command(BaseCommand):
             default=[],
             help="Limit to a workflow status. Can be passed multiple times.",
         )
+        parser.add_argument(
+            "--availability-status",
+            action="append",
+            default=[],
+            help="Limit to an availability status. Can be passed multiple times.",
+        )
 
     def handle(self, *args: Any, **options: Any) -> None:
         commit = bool(options["commit"])
@@ -35,6 +41,11 @@ class Command(BaseCommand):
         workflow_statuses = [str(status).strip() for status in options["workflow_status"] if str(status).strip()]
         if workflow_statuses:
             queryset = queryset.filter(workflow_status__in=workflow_statuses)
+        availability_statuses = [
+            str(status).strip() for status in options["availability_status"] if str(status).strip()
+        ]
+        if availability_statuses:
+            queryset = queryset.filter(availability_status__in=availability_statuses)
         limit = int(options["limit"] or 0)
         if limit > 0:
             queryset = queryset[:limit]

@@ -184,6 +184,7 @@ def infer_audience_keys_for_call(call: GrantCall) -> tuple[str, ...]:
         conditions_text=call.conditions_text,
         funding_text=call.funding_text,
         application_process_text=call.application_process_text,
+        include_source_hints=False,
     )
 
 
@@ -197,9 +198,11 @@ def infer_audience_keys(
     conditions_text: str = "",
     funding_text: str = "",
     application_process_text: str = "",
+    include_source_hints: bool = True,
 ) -> tuple[str, ...]:
     keys: list[str] = []
-    keys.extend(_source_audience_hints(source))
+    if include_source_hints:
+        keys.extend(_source_audience_hints(source))
 
     text = _normalise_text(
         " ".join(
@@ -211,8 +214,6 @@ def infer_audience_keys(
                 conditions_text,
                 funding_text,
                 application_process_text,
-                source.institution.name,
-                source.name,
             )
         )
     )

@@ -127,7 +127,7 @@ class ParsedCallPersistenceTests(TestCase):
             {"academic", "researcher"},
         )
 
-    def test_backfill_command_updates_existing_calls_without_audiences(self) -> None:
+    def test_backfill_command_updates_existing_open_calls_without_audiences(self) -> None:
         call = GrantCall.objects.create(
             title="TÜBİTAK Kutup Araştırma Projeleri Çağrısı",
             slug="tubitak-kutup-arastirma-projeleri-cagrisi",
@@ -143,12 +143,36 @@ class ParsedCallPersistenceTests(TestCase):
             workflow_status=GrantCall.WorkflowStatus.PUBLISHED,
             availability_status=GrantCall.AvailabilityStatus.OPEN,
         )
+        closed_call = GrantCall.objects.create(
+            title="Kapalı Araştırma Çağrısı",
+            slug="kapali-arastirma-cagrisi",
+            source=self.source,
+            institution=self.institution,
+            official_url="https://example.org/closed-polar",
+            canonical_source_url="https://example.org/closed-polar",
+            fingerprint="closed-polar-call",
+            summary="Bilimsel araştırma projeleri desteklenecektir.",
+            eligibility_text="Araştırmacılar başvurabilir.",
+            deadline_at=self.fetched_at - timedelta(days=1),
+            first_seen_at=self.fetched_at,
+            workflow_status=GrantCall.WorkflowStatus.PUBLISHED,
+            availability_status=GrantCall.AvailabilityStatus.CLOSED,
+        )
 
         out = StringIO()
-        call_command("backfill_call_audiences", "--commit", "--workflow-status", "published", stdout=out)
+        call_command(
+            "backfill_call_audiences",
+            "--commit",
+            "--workflow-status",
+            "published",
+            "--availability-status",
+            "open",
+            stdout=out,
+        )
 
         self.assertIn("updated=1", out.getvalue())
         self.assertEqual(set(call.audiences.values_list("key", flat=True)), {"researcher"})
+        self.assertFalse(closed_call.audiences.exists())
 
     def test_preserves_published_call_when_recrawl_only_loses_deadline(self) -> None:
         first_result = persist_parsed_call(
