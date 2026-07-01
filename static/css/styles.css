@@ -166,31 +166,32 @@ a:hover{ color:var(--hr-green-hover); }
 }
 .call-card{
   display:flex; flex-direction:column;
-  background:var(--hr-surface); border-radius:var(--hr-r-xl);
-  padding:1.4rem; box-shadow:var(--hr-shadow);
+  background:var(--hr-surface); border:1px solid #D3D1C7; border-radius:12px;
+  padding:1rem 1.25rem; box-shadow:var(--hr-shadow);
   transition:transform .18s var(--hr-ease), box-shadow .22s ease;
 }
+.call-card--closed{ opacity:.7; }
 .call-card h3, .call-card .h6{
-  font-size:1.03rem; line-height:1.32; font-weight:700; color:var(--hr-ink);
+  font-size:15px; line-height:1.35; font-weight:500; color:var(--hr-ink);
   margin:0 0 .35rem;
 }
 .call-card__top{ display:flex; align-items:center; justify-content:space-between; margin-bottom:.8rem; }
-.call-card__inst{ font-size:.85rem; color:var(--hr-muted); margin:0 0 .8rem; }
+.call-card__inst{ font-size:13px; color:#5F5E5A; margin:0 0 .8rem; }
 .call-card__tags{ display:flex; flex-wrap:wrap; gap:.45rem; margin-bottom:.95rem; }
 .call-card__tag{
-  background:var(--hr-mint-50); color:var(--hr-muted);
-  font-size:.75rem; padding:.25rem .62rem; border-radius:var(--hr-r-sm);
+  background:#F1EFE8; color:#5F5E5A;
+  font-size:12px; padding:3px 10px; border-radius:20px;
 }
 .call-card__deadline{
   display:flex; align-items:center; gap:.5rem;
-  font-size:.85rem; color:var(--hr-text); margin-bottom:.95rem;
+  font-size:13px; color:#5F5E5A; margin-bottom:.95rem;
 }
 .call-card__verify{
   display:flex; align-items:center; gap:.45rem;
-  border-top:1px solid var(--hr-mint-50); padding-top:.8rem;
-  font-size:.78rem; color:var(--hr-muted);
+  border-top:.5px solid #D3D1C7; margin-top:auto; padding-top:.8rem;
+  font-size:12px; color:#888780;
 }
-.call-card__verify::before{ content:"✓"; color:var(--hr-green); font-weight:800; }
+.call-card__verify svg{ flex:none; }
 
 /* Durum rozeti */
 .status-badge{
@@ -203,6 +204,15 @@ a:hover{ color:var(--hr-green-hover); }
 .status-badge--upcoming{ background:var(--hr-slate-bg); color:var(--hr-slate); }
 .status-badge--closed{   background:var(--hr-mint-50);  color:var(--hr-muted); }
 
+/* Çağrı kartı son tarih/durum rozeti */
+.deadline-status-badge{
+  display:inline-flex; align-items:center;
+  font-size:12px; font-weight:500; padding:3px 10px; border-radius:20px;
+}
+.deadline-status-badge--closed{ background:#F1EFE8; color:#5F5E5A; }
+.deadline-status-badge--urgent{ background:#FCEBEB; color:#A32D2D; }
+.deadline-status-badge--open{ background:#EAF3DE; color:#3B6D11; }
+
 /* Gün-kalan rozeti */
 .deadline-badge{
   margin-left:auto; font-size:.75rem; font-weight:700;
@@ -213,11 +223,15 @@ a:hover{ color:var(--hr-green-hover); }
 
 /* Favori (yer imi) ikonu */
 .favorite-toggle{
-  background:none; border:0; padding:0; line-height:0;
-  color:#B6C4BC; cursor:pointer; transition:transform .18s ease, color .18s ease;
+  align-items:center; background:none; border:0; color:#888780; cursor:pointer;
+  display:inline-flex; justify-content:center; line-height:0; min-height:32px;
+  min-width:32px; padding:0; transition:transform .18s ease, color .18s ease;
 }
-.favorite-toggle:hover{ color:var(--hr-green); transform:scale(1.18); }
-.favorite-toggle[aria-pressed="true"]{ color:var(--hr-green); }
+.favorite-toggle:hover{ color:#E24B4A; transform:scale(1.18); }
+.favorite-toggle[aria-pressed="true"]{ color:#E24B4A; }
+.favorite-toggle__icon--filled{ display:none; }
+.favorite-toggle[aria-pressed="true"] .favorite-toggle__icon--outline{ display:none; }
+.favorite-toggle[aria-pressed="true"] .favorite-toggle__icon--filled{ display:block; }
 
 /* ----------------------------- KURUMLAR ----------------------------- */
 .institution-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:1.15rem; }

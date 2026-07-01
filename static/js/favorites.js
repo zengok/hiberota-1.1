@@ -109,14 +109,22 @@
   const renderFavoriteCard = (call) => `
     <article class="call-card">
       <div class="d-flex flex-column gap-2">
+        <div class="call-card__top">
+          <span class="deadline-status-badge deadline-status-badge--open">${escapeHtml(call.deadline || "Tarih belirtilmemiş")}</span>
+          <button class="favorite-toggle" type="button" data-favorite-toggle data-call-id="${call.id}" aria-pressed="true" aria-label="Favoriden çıkar">
+            <svg class="favorite-toggle__icon favorite-toggle__icon--outline" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M19.5 12.6 12 20l-7.5-7.4A5 5 0 0 1 12 6a5 5 0 0 1 7.5 6.6Z"/>
+            </svg>
+            <svg class="favorite-toggle__icon favorite-toggle__icon--filled" width="19" height="19" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M12 20.8 4.1 13A5.45 5.45 0 0 1 12 5.5a5.45 5.45 0 0 1 7.9 7.5L12 20.8Z"/>
+            </svg>
+          </button>
+        </div>
         <div>
           <h2 class="h6 mb-1"><a href="${call.url}">${escapeHtml(call.title)}</a></h2>
           <p class="text-secondary small mb-0">${escapeHtml(call.institution)}</p>
         </div>
-        <p class="text-secondary small mb-0">Son tarih: ${escapeHtml(call.deadline || "Belirtilmemiş")}</p>
-        <button class="btn btn-outline-secondary btn-sm" type="button" data-favorite-toggle data-call-id="${call.id}">
-          Favoriden çıkar
-        </button>
       </div>
     </article>
   `;

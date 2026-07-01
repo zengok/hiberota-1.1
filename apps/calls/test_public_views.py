@@ -357,6 +357,49 @@ class CallListViewTests(TestCase):
         self.assertLess(content.index("Açık Çağrı"), content.index("Tarihi Belirsiz Çağrı"))
         self.assertLess(content.index("Tarihi Belirsiz Çağrı"), content.index("Kapalı Çağrı"))
 
+    def test_call_cards_render_deadline_badges_favorite_heart_and_verify_footer(self) -> None:
+        self._create_call(
+            title="Acil Çağrı",
+            slug="acil-cagri",
+            source=self.source,
+            institution=self.institution,
+            country=self.turkey,
+            audience=self.student,
+            deadline_offset_days=4,
+        )
+        self._create_call(
+            title="Açık Çağrı",
+            slug="acik-cagri-kart",
+            source=self.source,
+            institution=self.institution,
+            country=self.turkey,
+            audience=self.student,
+            deadline_offset_days=20,
+        )
+        self._create_call(
+            title="Kapalı Çağrı",
+            slug="kapali-cagri-kart",
+            source=self.source,
+            institution=self.institution,
+            country=self.turkey,
+            audience=self.student,
+            deadline_offset_days=-1,
+            status=GrantCall.AvailabilityStatus.CLOSED,
+        )
+
+        response = Client().get("/cagrilar/")
+        content = response.content.decode()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'class="deadline-status-badge deadline-status-badge--urgent">4 gün kaldı</span>')
+        self.assertContains(response, 'class="deadline-status-badge deadline-status-badge--open">Açık · 20 gün</span>')
+        self.assertContains(response, 'class="call-card call-card--closed"')
+        self.assertContains(response, 'class="deadline-status-badge deadline-status-badge--closed">Kapalı</span>')
+        self.assertContains(response, "favorite-toggle__icon favorite-toggle__icon--outline")
+        self.assertContains(response, "favorite-toggle__icon favorite-toggle__icon--filled")
+        self.assertContains(response, 'class="call-card__verify"')
+        self.assertNotIn("status-badge status-badge--open", content)
+
     def test_call_detail_renders_published_call_with_source_links(self) -> None:
         call = self._create_call(
             title="Detaylı Hibe Çağrısı",
